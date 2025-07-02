@@ -14,8 +14,8 @@
   letter-spacing: 1px;
 }
 .dashboard-nav-menu {
-  display: flex;
-  gap: 16px;
+    display: flex;
+    gap: 16px;
 }
 .dashboard-nav-btn {
   background: none;
