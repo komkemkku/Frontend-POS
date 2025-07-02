@@ -1,0 +1,113 @@
+.pay-bg {
+  min-height: 100vh;
+  background: linear-gradient(120deg, #e0e7ff 0%, #f0f2f5 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pay-container {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(24, 144, 255, 0.10), 0 1.5px 4px rgba(0,0,0,0.04);
+  padding: 36px 32px 32px 32px;
+  min-width: 340px;
+  max-width: 420px;
+  width: 100%;
+}
+.pay-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 24px;
+  text-align: center;
+}
+.pay-label {
+  font-size: 1rem;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 500;
+  margin-bottom: 18px;
+}
+.pay-select {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1.5px solid #d9d9d9;
+  font-size: 1rem;
+  background: #fafcff;
+  transition: border 0.2s;
+  font-family: inherit;
+}
+.pay-select:focus {
+  outline: none;
+  border-color: #1890ff;
+  background: #fff;
+}
+.pay-bill {
+  background: #f7faff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(24,144,255,0.08);
+  padding: 18px 16px;
+  margin-bottom: 12px;
+}
+.pay-bill-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.pay-bill-items {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 8px;
+}
+.pay-bill-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.pay-bill-total {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1890ff;
+  margin-bottom: 10px;
+}
+.pay-paytype {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 10px;
+}
+.pay-btn {
+  width: 100%;
+  padding: 12px 0;
+  background: linear-gradient(90deg, #1890ff 60%, #40a9ff 100%);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 8px;
+  box-shadow: 0 2px 8px rgba(24,144,255,0.08);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.pay-btn:disabled {
+  background: #b5d6fa;
+  cursor: not-allowed;
+}
+.print-btn {
+  background: #52c41a;
+  margin-top: 8px;
+}
+.pay-error {
+  color: #ff4d4f;
+  margin-top: 14px;
+  text-align: center;
+  font-size: 1.1rem;
+}
+.pay-success {
+  color: #52c41a;
+  margin-top: 14px;
+  text-align: center;
+  font-size: 1.1rem;
+}

@@ -1,0 +1,71 @@
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f6f8fa;
+}
+.admin-sidebar {
+  width: 220px;
+  background: #232946;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 0;
+  box-shadow: 2px 0 8px #0001;
+}
+.admin-logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 32px;
+}
+.admin-sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.admin-sidebar a {
+  color: #fff;
+  text-decoration: none;
+  padding: 12px 32px;
+  border-radius: 6px 0 0 6px;
+  transition: background 0.2s;
+  font-size: 1.08rem;
+}
+.admin-sidebar a.active, .admin-sidebar a:hover {
+  background: #eebbc3;
+  color: #232946;
+}
+.admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.admin-header {
+  background: #fff;
+  padding: 18px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  font-size: 1.1rem;
+}
+.admin-logout {
+  background: #eebbc3;
+  color: #232946;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.admin-logout:hover {
+  background: #f7cad0;
+}
+.admin-content {
+  flex: 1;
+  padding: 32px 40px;
+  background: #f6f8fa;
+  min-height: 0;
+  overflow-y: auto;
+}

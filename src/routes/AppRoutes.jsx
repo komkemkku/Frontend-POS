@@ -3,29 +3,18 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '../pages/LoginPage';
 import ProtectedRoute from './ProtectedRoute';
 import { useAuth } from '../hooks/useAuth';
+import DashboardPage from '../pages/DashboardPage';
+import OrderManagePage from '../pages/OrderManagePage';
+import PaymentPage from '../pages/PaymentPage';
 
-// สร้างหน้า Dashboard จำลอง
-const DashboardPage = () => {
-    const { user, logout } = useAuth();
-    return (
-        <div style={{ padding: '20px' }}>
-            <h1>Welcome to Dashboard!</h1>
-            {user ? (
-                <div>
-                    <p><strong>Full Name:</strong> {user.full_name}</p>
-                    <p><strong>Username:</strong> {user.username}</p>
-                    <p><strong>Role:</strong> {user.role}</p>
-                </div>
-            ) : (
-                <p>Loading user data...</p>
-            )}
-            <button onClick={logout} style={{ marginTop: '20px' }}>Logout</button>
-        </div>
-    );
-};
+
+
 
 
 import HomePage from '../pages/HomePage';
+import ReserveTablePage from '../pages/ReserveTablePage';
+import MenuPage from '../pages/MenuPage';
+import ScanQRPage from '../pages/ScanQRPage';
 
 function AppRoutes() {
     return (
@@ -39,6 +28,26 @@ function AppRoutes() {
                     </ProtectedRoute>
                 }
             />
+            <Route
+                path="/orders"
+                element={
+                    <ProtectedRoute>
+                        <OrderManagePage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/payment"
+                element={
+                    <ProtectedRoute>
+                        <PaymentPage />
+                    </ProtectedRoute>
+                }
+            />
+            {/* Customer Facing */}
+            <Route path="/reserve" element={<ReserveTablePage />} />
+            <Route path="/scan-qr" element={<ScanQRPage />} />
+            <Route path="/menu" element={<MenuPage />} />
             {/* Route หน้าแรก */}
             <Route path="/" element={<HomePage />} />
         </Routes>

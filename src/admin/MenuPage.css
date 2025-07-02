@@ -1,0 +1,85 @@
+.menu-page {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px 28px 24px 28px;
+  box-shadow: 0 8px 32px #0002;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.menu-add-btn {
+  background: #232946;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 18px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1rem;
+}
+.menu-add-btn:hover {
+  background: #eebbc3;
+  color: #232946;
+}
+.menu-table-wrap {
+  overflow-x: auto;
+}
+.menu-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+.menu-table th, .menu-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+.menu-table th {
+  background: #f6f8fa;
+  font-weight: 600;
+}
+.menu-img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #eee;
+}
+.menu-edit-btn, .menu-del-btn {
+  background: #eee;
+  color: #232946;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  margin-right: 6px;
+  cursor: pointer;
+  font-size: 0.98rem;
+}
+.menu-edit-btn:hover {
+  background: #eebbc3;
+  color: #232946;
+}
+.menu-del-btn {
+  background: #e63946;
+  color: #fff;
+}
+.menu-del-btn:hover {
+  background: #ffb4a2;
+  color: #232946;
+}
+.menu-loading {
+  text-align: center;
+  color: #232946;
+  font-size: 1.1rem;
+  margin: 32px 0;
+}
+.menu-error {
+  color: #e63946;
+  margin-bottom: 12px;
+  text-align: center;
+}

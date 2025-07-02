@@ -1,0 +1,72 @@
+.tableform-modal-bg {
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tableform-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px 28px 24px 28px;
+  min-width: 320px;
+  box-shadow: 0 8px 32px #0002;
+  max-width: 95vw;
+}
+.tableform-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.tableform-form label {
+  font-weight: 500;
+  color: #232946;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tableform-form input {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  font-size: 1rem;
+  background: #f6f8fa;
+}
+.tableform-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+.tableform-cancel {
+  background: #eee;
+  color: #232946;
+  border: none;
+  border-radius: 4px;
+  padding: 7px 18px;
+  cursor: pointer;
+}
+.tableform-cancel:hover {
+  background: #eebbc3;
+  color: #232946;
+}
+.tableform-form button[type=submit] {
+  background: #232946;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 7px 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.tableform-form button[type=submit]:hover {
+  background: #eebbc3;
+  color: #232946;
+}
+.tableform-error {
+  color: #e63946;
+  font-size: 0.98rem;
+  margin-top: -8px;
+}

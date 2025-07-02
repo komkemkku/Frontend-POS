@@ -1,0 +1,77 @@
+.table-page {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px 28px 24px 28px;
+  box-shadow: 0 8px 32px #0002;
+  max-width: 700px;
+  margin: 0 auto;
+}
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.table-add-btn {
+  background: #232946;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 18px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1rem;
+}
+.table-add-btn:hover {
+  background: #eebbc3;
+  color: #232946;
+}
+.table-table-wrap {
+  overflow-x: auto;
+}
+.table-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+.table-table th, .table-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+.table-table th {
+  background: #f6f8fa;
+  font-weight: 600;
+}
+.table-qr-img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid #eee;
+  background: #fff;
+}
+.table-del-btn {
+  background: #e63946;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 0.98rem;
+}
+.table-del-btn:hover {
+  background: #ffb4a2;
+  color: #232946;
+}
+.table-loading {
+  text-align: center;
+  color: #232946;
+  font-size: 1.1rem;
+  margin: 32px 0;
+}
+.table-error {
+  color: #e63946;
+  margin-bottom: 12px;
+  text-align: center;
+}

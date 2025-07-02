@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { loginApi, getStaffInfoApi } from '../api/authApi';
 import { useNavigate } from 'react-router-dom';
+import { setCookie, removeCookie } from '../utils/cookie';
 
 export const AuthContext = createContext();
 
@@ -45,8 +46,10 @@ export const AuthProvider = ({ children }) => {
             }
             if (!token) throw new Error('ไม่พบ token จากเซิร์ฟเวอร์');
 
+
             localStorage.setItem('token', token);
             setToken(token);
+            setCookie('token', token, 1); // เก็บ cookie 1 วัน
 
             // หลังจากได้ Token ให้ดึงข้อมูลผู้ใช้ทันที
             const staffInfoResponse = await getStaffInfoApi();
@@ -54,6 +57,7 @@ export const AuthProvider = ({ children }) => {
         } catch (err) {
             setError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
             localStorage.removeItem('token');
+            removeCookie('token');
             setToken(null);
             setUser(null);
         } finally {
@@ -63,6 +67,7 @@ export const AuthProvider = ({ children }) => {
 
     const logout = () => {
         localStorage.removeItem('token');
+        removeCookie('token');
         setToken(null);
         setUser(null);
         navigate('/login');
