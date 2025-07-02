@@ -16,7 +16,7 @@ function StaffForm({ onClose, onSuccess }) {
     setLoading(true);
     setError(null);
     try {
-      await axios.post('/admin/staffs', form);
+      await axios.post('/staff/create', form);
       onSuccess();
     } catch {
       setError('บันทึกไม่สำเร็จ');

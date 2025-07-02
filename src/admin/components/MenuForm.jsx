@@ -2,19 +2,26 @@ import React, { useState } from 'react';
 import axios from '../../api/axios';
 import './MenuForm.css';
 
-const categories = [
-  'อาหาร',
-  'เครื่องดื่ม',
-  'ของหวาน',
-];
-
-function MenuForm({ menu, onClose, onSuccess }) {
-  const [form, setForm] = useState(menu || { name: '', category: '', price: '', image: '' });
+function MenuForm({ menu, onClose, onSuccess, categories = [] }) {
+  const [form, setForm] = useState(menu ? {
+    name: menu.name || '',
+    category_id: menu.category_id || '',
+    price: menu.price || '',
+    image_url: menu.image_url || '',
+    is_available: menu.is_available ?? true
+  } : { name: '', category_id: '', price: '', image_url: '', is_available: true });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    let value = e.target.value;
+    if (e.target.name === 'price') {
+      value = value === '' ? '' : parseFloat(value);
+    }
+    if (e.target.name === 'is_available') {
+      value = e.target.checked;
+    }
+    setForm({ ...form, [e.target.name]: value });
   };
 
   const handleSubmit = async (e) => {
@@ -22,13 +29,28 @@ function MenuForm({ menu, onClose, onSuccess }) {
     setLoading(true);
     setError(null);
     try {
+      const payload = {
+        ...form,
+        price: form.price === '' ? undefined : parseFloat(form.price),
+        category_id: form.category_id ? parseInt(form.category_id) : undefined
+      };
+      if (isNaN(payload.price)) {
+        setError('กรุณากรอกราคาเป็นตัวเลข');
+        setLoading(false);
+        return;
+      }
+      if (!payload.category_id) {
+        setError('กรุณาเลือกหมวดหมู่');
+        setLoading(false);
+        return;
+      }
       if (menu) {
-        await axios.put(`/admin/menus/${menu.id}`, form);
+        await axios.patch(`/menu-items/${menu.id}`, payload);
       } else {
-        await axios.post('/admin/menus', form);
+        await axios.post('/menu-items/create', payload);
       }
       onSuccess();
-    } catch {
+    } catch (err) {
       setError('บันทึกไม่สำเร็จ');
     }
     setLoading(false);
@@ -43,16 +65,20 @@ function MenuForm({ menu, onClose, onSuccess }) {
             <input name="name" value={form.name} onChange={handleChange} required />
           </label>
           <label>หมวดหมู่
-            <select name="category" value={form.category} onChange={handleChange} required>
+            <select name="category_id" value={form.category_id} onChange={handleChange} required>
               <option value="">เลือกหมวดหมู่</option>
-              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </label>
           <label>ราคา (บาท)
             <input name="price" type="number" min="1" value={form.price} onChange={handleChange} required />
           </label>
           <label>URL รูปภาพ
-            <input name="image" value={form.image} onChange={handleChange} placeholder="https://..." />
+            <input name="image_url" value={form.image_url} onChange={handleChange} placeholder="https://..." />
+          </label>
+          <label style={{display:'flex',alignItems:'center',gap:8}}>
+            <input type="checkbox" name="is_available" checked={!!form.is_available} onChange={handleChange} />
+            แสดงให้ลูกค้าเห็น (is_available)
           </label>
           {error && <div className="menuform-error">{error}</div>}
           <div className="menuform-actions">

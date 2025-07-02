@@ -14,7 +14,7 @@ function ReportPage() {
   const fetchSummary = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/admin/reports/summary');
+      const res = await axios.get('/payments'); // ตัวอย่าง: ดึงข้อมูล payment summary (ควรแก้ endpoint ตาม backend จริง)
       setSummary(res.data.data);
       setError(null);
     } catch {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from '../api/axios';
 import './OrderManagePage.css';
+import MainLayout from '../components/MainLayout';
 
 function OrderManagePage() {
   const [orders, setOrders] = useState([]);
@@ -49,42 +50,44 @@ function OrderManagePage() {
   };
 
   return (
-    <div className="order-bg">
-      <div className="order-container">
-        <h2 className="order-title">รายการออเดอร์ (Real-time)</h2>
-        {loading ? (
-          <div className="order-loading">กำลังโหลด...</div>
-        ) : error ? (
-          <div className="order-error">{error}</div>
-        ) : (
-          <div className="order-list">
-            {orders.length === 0 && <div className="order-empty">ไม่มีออเดอร์ใหม่</div>}
-            {orders.map((order) => (
-              <div key={order.id} className={`order-card order-status-${order.status}`}>
-                <div className="order-table">โต๊ะ {order.table_id}</div>
-                <div className="order-items">
-                  {order.items?.map((item, idx) => (
-                    <div key={idx} className="order-item">{item.name} x {item.qty}</div>
-                  ))}
+    <MainLayout>
+      <div className="order-bg">
+        <div className="order-container">
+          <h2 className="order-title">รายการออเดอร์ (Real-time)</h2>
+          {loading ? (
+            <div className="order-loading">กำลังโหลด...</div>
+          ) : error ? (
+            <div className="order-error">{error}</div>
+          ) : (
+            <div className="order-list">
+              {orders.length === 0 && <div className="order-empty">ไม่มีออเดอร์ใหม่</div>}
+              {orders.map((order) => (
+                <div key={order.id} className={`order-card order-status-${order.status}`}>
+                  <div className="order-table">โต๊ะ {order.table_id}</div>
+                  <div className="order-items">
+                    {order.items?.map((item, idx) => (
+                      <div key={idx} className="order-item">{item.name} x {item.qty}</div>
+                    ))}
+                  </div>
+                  <div className="order-status">{renderOrderStatus(order.status)}</div>
+                  <div className="order-actions">
+                    {order.status === 'pending' && (
+                      <button onClick={() => handleStatusChange(order, 'cooking')}>เริ่มทำ</button>
+                    )}
+                    {order.status === 'cooking' && (
+                      <button onClick={() => handleStatusChange(order, 'ready')}>พร้อมเสิร์ฟ</button>
+                    )}
+                    {order.status === 'ready' && (
+                      <button onClick={() => handleStatusChange(order, 'served')}>เสิร์ฟแล้ว</button>
+                    )}
+                  </div>
                 </div>
-                <div className="order-status">{renderOrderStatus(order.status)}</div>
-                <div className="order-actions">
-                  {order.status === 'pending' && (
-                    <button onClick={() => handleStatusChange(order, 'cooking')}>เริ่มทำ</button>
-                  )}
-                  {order.status === 'cooking' && (
-                    <button onClick={() => handleStatusChange(order, 'ready')}>พร้อมเสิร์ฟ</button>
-                  )}
-                  {order.status === 'ready' && (
-                    <button onClick={() => handleStatusChange(order, 'served')}>เสิร์ฟแล้ว</button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }
 

@@ -16,7 +16,7 @@ function StaffPage() {
   const fetchStaffs = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/admin/staffs');
+      const res = await axios.get('/staff');
       setStaffs(res.data.data || []);
       setError(null);
     } catch {
@@ -27,7 +27,7 @@ function StaffPage() {
 
   const handleDelete = async (id) => {
     if (!window.confirm('ยืนยันการลบบัญชีนี้?')) return;
-    await axios.delete(`/admin/staffs/${id}`);
+    await axios.delete(`/staff/${id}`);
     fetchStaffs();
   };
 

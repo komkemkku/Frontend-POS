@@ -6,6 +6,14 @@ import { useAuth } from '../hooks/useAuth';
 import DashboardPage from '../pages/DashboardPage';
 import OrderManagePage from '../pages/OrderManagePage';
 import PaymentPage from '../pages/PaymentPage';
+import AdminLayout from '../admin/AdminLayout';
+import AdminMenuPage from '../admin/MenuPage';
+
+import AdminTablePage from '../admin/TablePage';
+import AdminReservationPage from '../admin/ReservationPage';
+import AdminStaffPage from '../admin/StaffPage';
+import AdminReportPage from '../admin/ReportPage';
+import CategoryPage from '../admin/CategoryPage';
 
 
 
@@ -44,6 +52,15 @@ function AppRoutes() {
                     </ProtectedRoute>
                 }
             />
+            {/* Admin Panel */}
+            <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                <Route path="menus" element={<AdminMenuPage />} />
+                <Route path="categories" element={<CategoryPage />} />
+                <Route path="tables" element={<AdminTablePage />} />
+                <Route path="reservations" element={<AdminReservationPage />} />
+                <Route path="staffs" element={<AdminStaffPage />} />
+                <Route path="reports" element={<AdminReportPage />} />
+            </Route>
             {/* Customer Facing */}
             <Route path="/reserve" element={<ReserveTablePage />} />
             <Route path="/scan-qr" element={<ScanQRPage />} />

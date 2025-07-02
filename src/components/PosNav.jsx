@@ -3,14 +3,17 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { removeCookie } from '../utils/cookie';
 import './PosNav.css';
 
+
+import { useContext } from 'react';
+import { AuthContext } from '../contexts/Authcontext';
+
 function PosNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useContext(AuthContext);
 
   const handleLogout = () => {
-    removeCookie('token');
-    localStorage.removeItem('token');
-    navigate('/login');
+    logout();
   };
 
   return (

@@ -5,6 +5,7 @@ import axios from '../api/axios';
 import './DashboardPage.css';
 import { getCookie, removeCookie } from '../utils/cookie';
 import { useNavigate } from 'react-router-dom';
+import MainLayout from '../components/MainLayout';
 
 
 
@@ -42,52 +43,44 @@ function DashboardPage() {
   };
 
   return (
-    <div className="dashboard-bg">
-      <nav className="dashboard-nav">
-        <div className="dashboard-nav-logo">🍽️ POS Dashboard</div>
-        <div className="dashboard-nav-menu">
-          <button onClick={() => navigate('/dashboard')} className="dashboard-nav-btn active">ภาพรวมโต๊ะ</button>
-          <button onClick={() => navigate('/orders')} className="dashboard-nav-btn">ออเดอร์</button>
-          <button onClick={() => navigate('/payment')} className="dashboard-nav-btn">ชำระเงิน</button>
-          <button onClick={() => navigate('/admin/menus')} className="dashboard-nav-btn">หลังร้าน (Admin)</button>
-        </div>
-        <button className="dashboard-logout-btn" onClick={handleLogout}>ออกจากระบบ</button>
-      </nav>
-      <div className="dashboard-container">
-        <div className="dashboard-header">
-          <h2 className="dashboard-title">สถานะโต๊ะทั้งหมด</h2>
-        </div>
-        {loading ? (
-          <div className="dashboard-loading">กำลังโหลด...</div>
-        ) : error ? (
-          <div className="dashboard-error">{error}</div>
-        ) : (
-          <div className="dashboard-table-list">
-            {tables.map((table) => (
-              <div key={table.id} className={`dashboard-table-card dashboard-table-${table.status || 'available'}`}>
-                <div className="dashboard-table-name">{table.name || `โต๊ะ ${table.id}`}</div>
-                <div className="dashboard-table-status">{renderStatus(table.status)}</div>
-                {table.orders && table.orders.length > 0 && (
-                  <div className="dashboard-table-orders">
-                    <b>ออเดอร์:</b>
-                    <ul>
-                      {table.orders.map((order) => (
-                        <li key={order.id}>
-                          #{order.id} - {order.status}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ))}
-            {tables.length === 0 && (
-              <div className="dashboard-empty">ไม่มีข้อมูลโต๊ะ</div>
-            )}
+    <MainLayout>
+      <div className="dashboard-bg">
+        <div className="dashboard-container">
+          <div className="dashboard-header">
+            <h2 className="dashboard-title">สถานะโต๊ะทั้งหมด</h2>
           </div>
-        )}
+          {loading ? (
+            <div className="dashboard-loading">กำลังโหลด...</div>
+          ) : error ? (
+            <div className="dashboard-error">{error}</div>
+          ) : (
+            <div className="dashboard-table-list">
+              {tables.map((table) => (
+                <div key={table.id} className={`dashboard-table-card dashboard-table-${table.status || 'available'}`}>
+                  <div className="dashboard-table-name">{table.name || `โต๊ะ ${table.id}`}</div>
+                  <div className="dashboard-table-status">{renderStatus(table.status)}</div>
+                  {table.orders && table.orders.length > 0 && (
+                    <div className="dashboard-table-orders">
+                      <b>ออเดอร์:</b>
+                      <ul>
+                        {table.orders.map((order) => (
+                          <li key={order.id}>
+                            #{order.id} - {order.status}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {tables.length === 0 && (
+                <div className="dashboard-empty">ไม่มีข้อมูลโต๊ะ</div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }
 

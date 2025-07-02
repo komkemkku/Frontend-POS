@@ -1,72 +1,133 @@
 .menuform-modal-bg {
   position: fixed;
   z-index: 1000;
-  left: 0; top: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.18);
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
+/* ปรับ modal ให้ดู modern ขึ้น */
 .menuform-modal {
   background: #fff;
-  border-radius: 12px;
-  padding: 32px 28px 24px 28px;
-  min-width: 340px;
-  box-shadow: 0 8px 32px #0002;
-  max-width: 95vw;
+  border-radius: 18px;
+  padding: 36px 32px 28px 32px;
+  min-width: 370px;
+  max-width: 98vw;
+  box-shadow: 0 8px 32px 0 rgba(44, 62, 80, 0.18), 0 1.5px 8px 0 rgba(44, 62, 80, 0.10);
+  animation: popin 0.18s cubic-bezier(.4, 1.4, .6, 1) 1;
 }
+
+@keyframes popin {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .menuform-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
+
+/* ปรับ label ให้ดู modern และ spacing ดีขึ้น */
 .menuform-form label {
   font-weight: 500;
   color: #232946;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  font-size: 1.04rem;
+  margin-bottom: 2px;
 }
-.menuform-form input, .menuform-form select {
-  padding: 8px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 5px;
-  font-size: 1rem;
+
+/* ปรับ input/select ให้ดู modern ขึ้น */
+.menuform-form input,
+.menuform-form select {
+  padding: 10px 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 7px;
+  font-size: 1.07rem;
   background: #f6f8fa;
+  transition: border 0.18s;
 }
+
+.menuform-form input:focus,
+.menuform-form select:focus {
+  border: 1.5px solid #232946;
+  outline: none;
+  background: #fff;
+}
+
+/* ปรับปุ่ม action ให้ spacing ดีขึ้น */
 .menuform-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 8px;
+  gap: 16px;
+  margin-top: 12px;
 }
+
+/* ปรับปุ่มให้ดู modern และเด่นขึ้น */
 .menuform-cancel {
-  background: #eee;
+  background: #f3f3f3;
   color: #232946;
   border: none;
-  border-radius: 4px;
-  padding: 7px 18px;
+  border-radius: 7px;
+  padding: 9px 26px;
+  font-size: 1.04rem;
   cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  font-weight: 500;
+  box-shadow: 0 1px 4px 0 rgba(44,62,80,0.04);
 }
+
 .menuform-cancel:hover {
   background: #eebbc3;
   color: #232946;
 }
+
 .menuform-form button[type=submit] {
   background: #232946;
   color: #fff;
   border: none;
-  border-radius: 4px;
-  padding: 7px 18px;
+  border-radius: 7px;
+  padding: 9px 26px;
+  font-size: 1.04rem;
   font-weight: bold;
   cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  box-shadow: 0 1px 4px 0 rgba(44,62,80,0.08);
 }
+
 .menuform-form button[type=submit]:hover {
   background: #eebbc3;
   color: #232946;
 }
+
+/* error แจ้งเตือน */
 .menuform-error {
   color: #e63946;
-  font-size: 0.98rem;
+  font-size: 1.04rem;
   margin-top: -8px;
+  margin-bottom: 2px;
+  text-align: right;
+  letter-spacing: 0.01em;
+}
+
+/* ปรับ checkbox ให้ดู modern */
+.menuform-form input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #232946;
+  margin-right: 6px;
 }

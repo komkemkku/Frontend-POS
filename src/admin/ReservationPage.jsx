@@ -14,7 +14,7 @@ function ReservationPage() {
   const fetchReservations = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/admin/reservations');
+      const res = await axios.get('/reservations');
       setReservations(res.data.data || []);
       setError(null);
     } catch {
@@ -24,7 +24,7 @@ function ReservationPage() {
   };
 
   const handleStatus = async (id, status) => {
-    await axios.put(`/admin/reservations/${id}/status`, { status });
+    await axios.patch(`/reservations/${id}`, { status });
     fetchReservations();
   };
 

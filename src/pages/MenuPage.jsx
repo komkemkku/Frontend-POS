@@ -13,7 +13,8 @@ function MenuPage() {
     const fetchMenu = async () => {
       try {
         const res = await axios.get('/menu-items');
-        setMenu(res.data.data || []);
+        // แสดงเฉพาะเมนูที่ is_available === true
+        setMenu((res.data.data || []).filter(item => item.is_available));
       } catch (err) {
         setError('โหลดเมนูไม่สำเร็จ');
       } finally {

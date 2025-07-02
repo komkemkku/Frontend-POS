@@ -1,10 +1,12 @@
 import React from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { removeCookie } from '../utils/cookie';
 import './AdminLayout.css';
 
 const menu = [
   { path: '/dashboard', label: 'ภาพรวมโต๊ะ (Dashboard)' },
   { path: '/admin/menus', label: 'จัดการเมนู' },
+  { path: '/admin/categories', label: 'จัดการประเภทสินค้า' },
   { path: '/admin/tables', label: 'จัดการโต๊ะ' },
   { path: '/admin/reservations', label: 'การจอง' },
   { path: '/admin/staffs', label: 'พนักงาน' },
@@ -13,6 +15,12 @@ const menu = [
 
 function AdminLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    removeCookie('token');
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
@@ -32,7 +40,7 @@ function AdminLayout() {
       <main className="admin-main">
         <header className="admin-header">
           <span>ระบบหลังบ้านร้านอาหาร</span>
-          <button className="admin-logout">ออกจากระบบ</button>
+          <button className="admin-logout" onClick={handleLogout}>ออกจากระบบ</button>
         </header>
         <div className="admin-content">
           <Outlet />
