@@ -38,12 +38,13 @@ function TableForm({ table, onClose, onSuccess }) {
         return;
       }
       // Map frontend form fields to backend payload (ไม่ส่ง updated_at, name ปล่อยว่างได้)
-      const payload = {
+      let payload = {
         table_number: parseInt(form.number, 10),
         capacity: parseInt(form.seats, 10),
         status: String(form.status)
       };
       if (table && table.id) {
+        payload = { ...payload, id: table.id };
         await axios.patch(`/tables/${table.id}`, payload);
       } else {
         await axios.post('/tables/create', payload);

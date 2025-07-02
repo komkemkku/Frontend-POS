@@ -98,8 +98,8 @@ function TablePage() {
                 else if (table.status === '3' || table.status === 3) { statusLabel = 'จอง'; statusColor = '#f39c12'; }
                 // QR code identifier (ถ้ามี)
                 const qrValue = table.qr_code_identifier && table.qr_code_identifier !== ''
-                  ? table.qr_code_identifier
-                  : `http://172.20.10.3:8080/tables/${table.id}`;
+                  ? `http://172.20.10.3:8080/public/menu/${table.qr_code_identifier}`
+                  : `http://172.20.10.3:8080/public/menu/${table.id}`;
                 return (
                   <tr key={table.id}>
                     <td>{tableNumber}</td>
