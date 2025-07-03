@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../api/axios';
+import { useSearchParams } from 'react-router-dom';
 
 function MenuPage() {
   const [menu, setMenu] = useState([]);
@@ -8,8 +9,15 @@ function MenuPage() {
   const [cart, setCart] = useState([]);
   const [tableNumber, setTableNumber] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
+    // ดึง table parameter จาก URL
+    const tableParam = searchParams.get('table');
+    if (tableParam) {
+      setTableNumber(tableParam);
+    }
+    
     const fetchMenu = async () => {
       try {
         const res = await axios.get('/menu-items');
@@ -22,7 +30,7 @@ function MenuPage() {
       }
     };
     fetchMenu();
-  }, []);
+  }, [searchParams]);
 
   const addToCart = (item) => {
     setCart((prev) => {

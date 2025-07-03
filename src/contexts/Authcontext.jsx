@@ -36,7 +36,10 @@ export const AuthProvider = ({ children }) => {
         setLoading(true);
         setError(null);
         try {
+            console.log('กำลังส่ง Login request...', { username, password: '***' });
             const loginResponse = await loginApi(username, password);
+            console.log('Login response:', loginResponse);
+            
             // รองรับทั้งกรณี token อยู่ใน data.data หรือ data โดยตรง
             let token = null;
             if (loginResponse.data?.data?.token) {
@@ -46,15 +49,18 @@ export const AuthProvider = ({ children }) => {
             }
             if (!token) throw new Error('ไม่พบ token จากเซิร์ฟเวอร์');
 
-
+            console.log('Token ที่ได้:', token);
             localStorage.setItem('token', token);
             setToken(token);
             setCookie('token', token, 1); // เก็บ cookie 1 วัน
 
             // หลังจากได้ Token ให้ดึงข้อมูลผู้ใช้ทันที
+            console.log('กำลังดึงข้อมูลผู้ใช้...');
             const staffInfoResponse = await getStaffInfoApi();
+            console.log('Staff info response:', staffInfoResponse);
             setUser(staffInfoResponse.data.data);
         } catch (err) {
+            console.error('Login error:', err);
             setError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
             localStorage.removeItem('token');
             removeCookie('token');

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-    baseURL: 'http://backend-pos-production.up.railway.app:8080'
+    baseURL: 'https://backend-pos-production.up.railway.app'
 });
 
 // เพิ่ม Token ในทุก Request โดยอัตโนมัติ

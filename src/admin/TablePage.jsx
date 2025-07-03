@@ -97,9 +97,17 @@ function TablePage() {
                 else if (table.status === '2' || table.status === 2) { statusLabel = 'ไม่ว่าง'; statusColor = '#e74c3c'; }
                 else if (table.status === '3' || table.status === 3) { statusLabel = 'จอง'; statusColor = '#f39c12'; }
                 // QR code identifier (ถ้ามี)
+                // ชี้ไปที่ frontend ที่ deploy แล้ว
+                const frontendUrl = 'https://frontend-nzqihqp3h-komkems-projects.vercel.app';
+                
                 const qrValue = table.qr_code_identifier && table.qr_code_identifier !== ''
-                  ? `http://172.20.10.3:8080/public/menu/${table.qr_code_identifier}`
-                  : `http://172.20.10.3:8080/public/menu/${table.id}`;
+                  ? `${frontendUrl}/menu?table=${table.qr_code_identifier}`
+                  : `${frontendUrl}/menu?table=${table.id}`;
+                
+                // Debug: แสดง URL ที่สร้างขึ้น
+                console.log('QR URL for table', table.id, ':', qrValue);
+                console.log('Table data:', table);
+                
                 return (
                   <tr key={table.id}>
                     <td>{tableNumber}</td>
@@ -126,13 +134,81 @@ function TablePage() {
                           <button
                             style={{ marginTop: 4, fontSize: '0.92rem', padding: '2px 10px', borderRadius: 4, border: '1px solid #eee', background: '#fff', cursor: 'pointer' }}
                             onClick={() => {
-                              const svg = document.querySelector(`#qr-table-${table.id} svg`);
-                              if (svg) {
-                                const xml = new XMLSerializer().serializeToString(svg);
-                                const dataUrl = 'data:image/svg+xml;base64,' + btoa(xml);
-                                const win = window.open();
-                                win.document.write(`<img src='${dataUrl}' style='width:180px;height:180px'/>`);
-                                win.print();
+                              try {
+                                const svg = document.querySelector(`#qr-table-${table.id} svg`);
+                                if (!svg) {
+                                  alert('ไม่พบ QR Code');
+                                  return;
+                                }
+                                
+                                // Clone SVG และเพิ่ม namespace
+                                const svgClone = svg.cloneNode(true);
+                                svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                                
+                                // แปลง SVG เป็น string
+                                const svgString = new XMLSerializer().serializeToString(svgClone);
+                                
+                                // สร้าง HTML สำหรับการพิมพ์
+                                const printWindow = window.open('', '_blank');
+                                printWindow.document.write(`
+                                  <html>
+                                    <head>
+                                      <title>QR Code - โต๊ะ ${tableNumber}</title>
+                                      <style>
+                                        body { 
+                                          margin: 0; 
+                                          padding: 20px; 
+                                          display: flex; 
+                                          flex-direction: column; 
+                                          align-items: center; 
+                                          font-family: Arial, sans-serif;
+                                        }
+                                        .qr-container { 
+                                          text-align: center; 
+                                          page-break-inside: avoid; 
+                                        }
+                                        .qr-title { 
+                                          font-size: 18px; 
+                                          font-weight: bold; 
+                                          margin-bottom: 10px; 
+                                        }
+                                        .qr-code { 
+                                          width: 200px; 
+                                          height: 200px; 
+                                          border: 1px solid #ccc; 
+                                          padding: 10px; 
+                                          background: white; 
+                                        }
+                                        @media print {
+                                          body { margin: 0; padding: 10px; }
+                                          .qr-code { width: 150px; height: 150px; }
+                                        }
+                                      </style>
+                                    </head>
+                                    <body>
+                                      <div class="qr-container">
+                                        <div class="qr-title">QR Code - โต๊ะ ${tableNumber}</div>
+                                        <div class="qr-code">
+                                          ${svgString}
+                                        </div>
+                                        <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                                          สแกนเพื่อดูเมนู
+                                        </p>
+                                      </div>
+                                    </body>
+                                  </html>
+                                `);
+                                printWindow.document.close();
+                                
+                                // รอให้โหลดเสร็จแล้วพิมพ์
+                                setTimeout(() => {
+                                  printWindow.print();
+                                  printWindow.close();
+                                }, 500);
+                                
+                              } catch (error) {
+                                console.error('Print error:', error);
+                                alert('เกิดข้อผิดพลาดในการพิมพ์');
                               }
                             }}
                           >
