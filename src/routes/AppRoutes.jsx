@@ -65,8 +65,8 @@ function AppRoutes() {
             <Route path="/reserve" element={<ReserveTablePage />} />
             <Route path="/scan-qr" element={<ScanQRPage />} />
             <Route path="/menu" element={<MenuPage />} />
-            {/* Route หน้าแรก */}
-            <Route path="/" element={<HomePage />} />
+            {/* Route หน้าแรก - Redirect to login */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
     );
 }

@@ -97,8 +97,8 @@ function TablePage() {
                 else if (table.status === '2' || table.status === 2) { statusLabel = 'ไม่ว่าง'; statusColor = '#e74c3c'; }
                 else if (table.status === '3' || table.status === 3) { statusLabel = 'จอง'; statusColor = '#f39c12'; }
                 // QR code identifier (ถ้ามี)
-                // ชี้ไปที่ frontend ที่ deploy แล้ว
-                const frontendUrl = 'https://frontend-nzqihqp3h-komkems-projects.vercel.app';
+                // ใช้ alias domain ที่เสถียร
+                const frontendUrl = 'https://frontend-pos-rouge.vercel.app';
                 
                 const qrValue = table.qr_code_identifier && table.qr_code_identifier !== ''
                   ? `${frontendUrl}/menu?table=${table.qr_code_identifier}`
