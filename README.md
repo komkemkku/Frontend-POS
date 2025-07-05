@@ -1,53 +1,169 @@
-# 🍽️ ระบบ POS ร้านอาหาร
+# 🍽️ POS Frontend System
 
-ระบบจุดขายสำหรับร้านอาหารที่ทันสมัย รองรับการสั่งอาหารผ่าน QR Code
+Modern Point of Sale (POS) Frontend built with React and Vite for restaurant management
 
-## ✨ คุณสมบัติหลัก
+## 🌟 Features
 
-### สำหรับพนักงาน/แอดมิน
-- 🔐 ระบบเข้าสู่ระบบที่ปลอดภัย
-- 📊 แดชบอร์ดภาพรวมโต๊ะ
-- 🍕 จัดการเมนูและหมวดหมู่
-- 🪑 จัดการโต๊ะ
-- 📱 สร้างและพิมพ์ QR Code สำหรับลูกค้า
-- 📝 จัดการคำสั่งซื้อ
-- 💰 ระบบการชำระเงิน
-- 👥 จัดการพนักงาน
-- 📈 รายงานยอดขาย
+### 📊 Admin Dashboard
+- Real-time sales analytics and reporting
+- Order statistics with visual charts
+- Revenue tracking and trends
+- Daily/Monthly business insights
 
-### สำหรับลูกค้า
-- 📱 สแกน QR Code เพื่อเข้าสู่เมนู
-- 🚫 ไม่ต้องเข้าสู่ระบบ
-- 🍽️ ดูเมนูแบบเรียลไทม์
-- 🛒 สั่งอาหารผ่านระบบ
-- 📋 ดูประวัติการสั่งในวันนั้น
-- 🎯 ระบุโต๊ะอัตโนมัติ
+### � Order Management System
+- Real-time order tracking with auto-refresh
+- Order status flow: Pending → Preparing → Ready → Served → Completed
+- Advanced filtering by status, table, and customer
+- Detailed order items display with pricing
+- Time tracking with relative timestamps
+- Search functionality across orders
 
-## 🚀 การใช้งาน
+### 💳 Payment Processing
+- Multiple payment methods: Cash, Credit Card, Bank Transfer, QR Code, E-Wallet
+- Smart discount calculation
+- Automatic change calculation for cash payments
+- Digital receipt generation and printing
+- Real-time payment status updates
+- Integration with backend payment API
 
-### สำหรับพนักงาน
-1. เปิดเว็บไซต์ → จะเข้าสู่หน้าเข้าสู่ระบบโดยอัตโนมัติ
-2. เข้าสู่ระบบด้วย username และ password
-3. ไปที่ "QR Code สำหรับลูกค้า" เพื่อสร้างและพิมพ์ QR Code
-4. วาง QR Code บนโต๊ะลูกค้า
+### 🎨 Modern UI/UX Design
+- Clean white-blue professional color scheme
+- Fully responsive design for all devices
+- Modern card-based layouts with shadows
+- Smooth animations and micro-interactions
+- Intuitive navigation and user experience
 
-### สำหรับลูกค้า
-1. สแกน QR Code ที่โต๊ะ
-2. เข้าสู่เมนูโดยอัตโนมัติ (ไม่ต้องเข้าสู่ระบบ)
-3. เลือกอาหารที่ต้องการ
-4. สั่งอาหารผ่านระบบ
-5. รอพนักงานเสิร์ฟ
+### 👥 Customer Experience
+- QR Code-based menu access (no login required)
+- Real-time menu browsing
+- Direct order placement from tables
+- Order history tracking
 
-## 🛠 Installation
+## 🚀 Technology Stack
+
+- **React 18** - Modern frontend framework
+- **Vite** - Fast build tool and dev server
+- **CSS3** - Advanced styling with flexbox/grid
+- **Axios** - HTTP client for API integration
+- **React Router** - Client-side routing
+- **Context API** - Global state management
+
+## 🛠️ Quick Start
 
 ```bash
+# Clone the repository
+git clone https://github.com/komkemkku/Frontend-POS.git
+cd Frontend-POS
+
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
+
+# Build for production
+npm run build
 ```
 
-## 📱 URL Structure
+## 🌐 Environment Configuration
 
-### สำหรับพนักงาน/แอดมิน
+Create `.env` file in root directory:
+
+```env
+VITE_API_BASE_URL=http://localhost:8080/api
+VITE_APP_NAME=POS Restaurant System
+```
+
+## 📱 Deployment
+
+Optimized for **Vercel** deployment:
+
+```bash
+# Deploy to production
+vercel --prod
+```
+
+**Live Demo**: https://frontend-pos.vercel.app
+
+## 🔗 Related Projects
+
+- **Backend API**: [Backend-POS](https://github.com/komkemkku/Backend-POS) - Go Gin REST API
+
+## 🎯 Application Routes
+
+| Route | Description | Access |
+|-------|-------------|---------|
+| `/` | Dashboard & Analytics | Admin |
+| `/orders` | Order Management | Admin |
+| `/payment` | Payment Processing | Admin |
+| `/menu` | Menu Management | Admin |
+| `/staff` | Staff Management | Admin |
+| `/tables` | Table Management | Admin |
+| `/customer-menu` | Customer Menu (QR) | Public |
+
+## 🏗️ Development
+
+```bash
+# Development mode with hot reload
+npm run dev
+
+# Build production bundle
+npm run build
+
+# Preview production build
+npm run preview
+
+# Code linting
+npm run lint
+```
+
+## 📱 Mobile Responsive
+
+- **Desktop**: Full dashboard experience
+- **Tablet**: Optimized admin interface
+- **Mobile**: Touch-friendly customer menu
+
+## 🔧 API Integration
+
+Seamless integration with Go backend for:
+
+- **Orders**: CRUD operations, status updates
+- **Payments**: Transaction processing, receipts
+- **Menu**: Items, categories, pricing
+- **Staff**: Authentication, management
+- **Tables**: QR generation, management
+- **Analytics**: Sales data, reports
+
+## 🎨 Design System
+
+### Color Palette
+- **Primary**: Blue tones (#007bff family)
+- **Secondary**: White and light grays
+- **Success**: Green for completed actions
+- **Warning**: Orange for pending states
+- **Error**: Red for alerts
+
+### Typography
+- **Headers**: Clean, modern fonts
+- **Body**: Readable, accessible text
+- **Monospace**: For codes and numbers
+
+## 🏆 Production Features
+
+✅ **Performance Optimized**  
+✅ **SEO Ready**  
+✅ **PWA Capable**  
+✅ **Error Boundaries**  
+✅ **Loading States**  
+✅ **Offline Support**  
+✅ **Real-time Updates**  
+✅ **Security Headers**  
+✅ **API Error Handling**  
+✅ **Responsive Design**  
+
+---
+
+**Built with ❤️ for modern restaurant operations**
 - `/` - หน้าเข้าสู่ระบบ
 - `/login` - หน้าเข้าสู่ระบบ
 - `/dashboard` - แดชบอร์ดภาพรวมโต๊ะ
