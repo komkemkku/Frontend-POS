@@ -21,17 +21,19 @@ function CustomerMenuPage() {
 
     const loadData = async () => {
         try {
+            setLoading(true);
+            
             // โหลดข้อมูลโต๊ะ
-            const tableResponse = await customerApi.getTable(tableId);
-            setTableInfo(tableResponse.data);
+            const tableInfo = await customerApi.getTable(tableId);
+            setTableInfo(tableInfo);
 
             // โหลดหมวดหมู่
-            const categoriesResponse = await customerApi.getCategories();
-            setCategories(categoriesResponse.data);
+            const categoriesData = await customerApi.getCategories();
+            setCategories(Array.isArray(categoriesData) ? categoriesData : []);
 
             // โหลดเมนู
-            const menuResponse = await customerApi.getMenuItems();
-            setMenuItems(menuResponse.data);
+            const menuData = await customerApi.getMenuItems();
+            setMenuItems(Array.isArray(menuData) ? menuData : []);
 
             setLoading(false);
         } catch (error) {
@@ -42,10 +44,11 @@ function CustomerMenuPage() {
 
     const loadOrderHistory = async () => {
         try {
-            const response = await customerApi.getOrderHistory(tableId);
-            setOrderHistory(response.data);
+            const orderData = await customerApi.getOrderHistory(tableId);
+            setOrderHistory(Array.isArray(orderData) ? orderData : []);
         } catch (error) {
             console.error('Error loading order history:', error);
+            setOrderHistory([]);
         }
     };
 
@@ -81,28 +84,32 @@ function CustomerMenuPage() {
 
         try {
             const orderData = {
-                tableId: tableId,
+                qr_code_identifier: tableId,
+                table_id: tableInfo?.table_id || tableId,
                 items: cart.map(item => ({
-                    menuItemId: item.id,
+                    menu_item_id: item.id,
                     quantity: item.quantity,
-                    price: item.price
+                    price: item.price,
+                    name: item.name
                 })),
-                totalAmount: getTotalAmount(),
-                status: 'pending'
+                total_amount: getTotalAmount(),
+                status: 'pending',
+                order_type: 'dine_in'
             };
 
-            const response = await customerApi.createOrder(orderData);
+            const result = await customerApi.createOrder(orderData);
             
-            if (response.status === 200 || response.status === 201) {
+            // Handle successful response
+            if (result) {
                 alert('สั่งอาหารสำเร็จ! รอสักครู่จะมีพนักงานมาเสิร์ฟครับ');
                 setCart([]);
                 loadOrderHistory();
             } else {
-                alert('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+                throw new Error('Invalid response from server');
             }
         } catch (error) {
             console.error('Error submitting order:', error);
-            alert('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+            alert('เกิดข้อผิดพลาดในการสั่งอาหาร กรุณาลองใหม่อีกครั้ง');
         }
     };
 
@@ -112,7 +119,13 @@ function CustomerMenuPage() {
 
     const filteredMenuItems = selectedCategory === 'all'
         ? menuItems
-        : menuItems.filter(item => item.categoryId === selectedCategory);
+        : menuItems.filter(item => {
+            // Support both categoryId and category_id fields
+            const categoryId = item.categoryId || item.category_id;
+            const categoryName = item.category || item.category_name;
+            
+            return categoryId === selectedCategory || categoryName === selectedCategory;
+        });
 
     if (loading) {
         return <div className="loading">กำลังโหลด...</div>;
@@ -123,7 +136,7 @@ function CustomerMenuPage() {
             <header className="customer-header">
                 <h1>เมนูอาหาร</h1>
                 <div className="table-info">
-                    <span>โต๊ะ {tableInfo?.name || tableId}</span>
+                    <span>โต๊ะ {tableInfo?.table_name || tableInfo?.name || tableId}</span>
                     <button 
                         className="history-btn"
                         onClick={() => setShowHistory(!showHistory)}
@@ -142,14 +155,25 @@ function CustomerMenuPage() {
                         <div className="history-list">
                             {orderHistory.map(order => (
                                 <div key={order.id} className="history-item">
-                                    <div className="order-time">{new Date(order.createdAt).toLocaleTimeString('th-TH')}</div>
+                                    <div className="order-time">
+                                        {new Date(order.created_at || order.createdAt).toLocaleTimeString('th-TH')}
+                                    </div>
                                     <div className="order-items">
-                                        {order.items.map(item => (
-                                            <span key={item.id}>{item.name} x{item.quantity}</span>
+                                        {(order.items || order.order_items || []).map(item => (
+                                            <span key={item.id}>
+                                                {item.name || item.menu_item_name} x{item.quantity}
+                                            </span>
                                         ))}
                                     </div>
-                                    <div className="order-status">{order.status}</div>
-                                    <div className="order-total">฿{order.totalAmount}</div>
+                                    <div className="order-status">
+                                        {order.status === 'pending' ? 'รอเสิร์ฟ' : 
+                                         order.status === 'preparing' ? 'กำลังทำ' :
+                                         order.status === 'served' ? 'เสิร์ฟแล้ว' :
+                                         order.status === 'completed' ? 'เสร็จสิ้น' : order.status}
+                                    </div>
+                                    <div className="order-total">
+                                        ฿{order.total_amount || order.totalAmount}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -179,16 +203,22 @@ function CustomerMenuPage() {
                 <div className="menu-grid">
                     {filteredMenuItems.map(item => (
                         <div key={item.id} className="menu-item">
-                            <img src={item.image} alt={item.name} />
+                            <img 
+                                src={item.image || item.image_url || '/placeholder-food.svg'} 
+                                alt={item.name} 
+                                onError={(e) => {
+                                    e.target.src = '/placeholder-food.svg';
+                                }}
+                            />
                             <h3>{item.name}</h3>
                             <p className="description">{item.description}</p>
                             <div className="price">฿{item.price}</div>
                             <button 
                                 className="add-btn"
                                 onClick={() => addToCart(item)}
-                                disabled={!item.available}
+                                disabled={!item.available && item.available !== undefined}
                             >
-                                {item.available ? 'เพิ่มลงตะกร้า' : 'หมด'}
+                                {(item.available === false) ? 'หมด' : 'เพิ่มลงตะกร้า'}
                             </button>
                         </div>
                     ))}

@@ -1,0 +1,8 @@
+<!-- Placeholder for food image -->
+<svg width="200" height="150" viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="150" fill="#f3f4f6"/>
+  <circle cx="100" cy="60" r="25" fill="#d1d5db"/>
+  <path d="M85 70h30v5h-30z" fill="#d1d5db"/>
+  <path d="M90 80h20v3h-20z" fill="#d1d5db"/>
+  <text x="100" y="110" font-family="Arial, sans-serif" font-size="12" fill="#9ca3af" text-anchor="middle">No Image</text>
+</svg>

@@ -26,11 +26,21 @@ function PaymentPage() {
       setError(null);
       
       const data = await adminApi.orders.getList();
-      let payableOrders = (data || []).filter(order => 
-        ['served', 'ready'].includes(order.status)
+      let payableOrders = (Array.isArray(data) ? data : []).filter(order => 
+        ['served', 'ready', 'completed'].includes(order.status)
       );
       
-      // Add fallback data if empty
+      // Map field names to ensure consistency
+      payableOrders = payableOrders.map(order => ({
+        ...order,
+        table_number: order.table_number || order.tableNumber || order.table_id,
+        total_amount: order.total_amount || order.totalAmount,
+        created_at: order.created_at || order.createdAt,
+        customer_name: order.customer_name || order.customerName || 'ลูกค้าทั่วไป',
+        order_items: order.order_items || order.orderItems || order.items || []
+      }));
+      
+      // Add fallback data if empty for testing
       if (payableOrders.length === 0) {
         payableOrders = [
           {
@@ -85,8 +95,24 @@ function PaymentPage() {
 
     try {
       const orderData = await adminApi.orders.getById(orderId);
-      setOrderDetails(orderData);
-      setReceivedAmount(orderData.total_amount?.toString() || '');
+      
+      // Map field names for consistency
+      const mappedOrderData = {
+        ...orderData,
+        table_number: orderData.table_number || orderData.tableNumber || orderData.table_id,
+        total_amount: orderData.total_amount || orderData.totalAmount,
+        created_at: orderData.created_at || orderData.createdAt,
+        customer_name: orderData.customer_name || orderData.customerName || 'ลูกค้าทั่วไป',
+        order_items: (orderData.order_items || orderData.orderItems || orderData.items || []).map(item => ({
+          ...item,
+          menu_name: item.menu_name || item.menuName || item.name,
+          quantity: item.quantity,
+          price: item.price || item.unitPrice
+        }))
+      };
+      
+      setOrderDetails(mappedOrderData);
+      setReceivedAmount(mappedOrderData.total_amount?.toString() || '');
     } catch (err) {
       console.error('Order details fetch error:', err);
       setError(`ไม่สามารถโหลดรายละเอียดออเดอร์ได้: ${err.message}`);
