@@ -1,171 +1,370 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../api/axios';
+import { toast } from 'react-toastify';
+import MainLayout from '../components/MainLayout';
 
 function ReserveTablePage() {
     const [tables, setTables] = useState([]);
     const [form, setForm] = useState({
         customer_name: '',
-        customer_phone: '',
-        number_of_guests: 1,
+        phone: '',
+        party_size: 1,
+        reservation_date: '',
         reservation_time: '',
         table_id: '',
-        status: '',
         notes: ''
     });
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState(null);
+    const [fetchingTables, setFetchingTables] = useState(true);
 
-    // ดึงรายการโต๊ะจาก backend
     useEffect(() => {
-        const fetchTables = async () => {
-            try {
-                const res = await axios.get('/tables');
-                setTables(res.data?.data || []);
-            } catch (e) {
-                setTables([]);
-            }
-        };
         fetchTables();
     }, []);
+
+    const fetchTables = async () => {
+        try {
+            setFetchingTables(true);
+            console.log('Fetching tables for reservation...');
+            
+            const response = await axios.get('/tables');
+            console.log('Tables response:', response.data);
+            
+            if (response.data.success) {
+                // Filter available tables for reservation
+                const availableTables = (response.data.data || []).filter(
+                    table => table.status === 'available'
+                );
+                setTables(availableTables);
+            } else {
+                throw new Error(response.data.message || 'ไม่สามารถโหลดรายการโต๊ะได้');
+            }
+        } catch (err) {
+            console.error('Tables fetch error:', err);
+            setTables([]);
+            toast.error(err.response?.data?.message || 'โหลดรายการโต๊ะไม่สำเร็จ');
+        } finally {
+            setFetchingTables(false);
+        }
+    };
+
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setForm(prev => ({ ...prev, [name]: value }));
+    };
+
+    const validateForm = () => {
+        if (!form.customer_name.trim()) {
+            setError('กรุณากรอกชื่อลูกค้า');
+            return false;
+        }
+        if (!form.phone.trim()) {
+            setError('กรุณากรอกหมายเลขโทรศัพท์');
+            return false;
+        }
+        if (!form.party_size || form.party_size < 1) {
+            setError('กรุณาระบุจำนวนลูกค้า');
+            return false;
+        }
+        if (!form.reservation_date) {
+            setError('กรุณาเลือกวันที่จอง');
+            return false;
+        }
+        if (!form.reservation_time) {
+            setError('กรุณาเลือกเวลาจอง');
+            return false;
+        }
+        if (!form.table_id) {
+            setError('กรุณาเลือกโต๊ะ');
+            return false;
+        }
+
+        // Validate reservation date (not in the past)
+        const reservationDateTime = new Date(`${form.reservation_date}T${form.reservation_time}`);
+        const now = new Date();
+        if (reservationDateTime < now) {
+            setError('ไม่สามารถจองย้อนหลังได้');
+            return false;
+        }
+
+        return true;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (!validateForm()) {
+            return;
+        }
+
         setLoading(true);
         setError(null);
         setSuccess(false);
+
         try {
-            // แปลง reservation_time เป็น unix timestamp (วินาที)
-            let reservation_time = form.reservation_time;
-            let unixTime = '';
-            if (reservation_time) {
-                unixTime = Math.floor(new Date(reservation_time).getTime() / 1000).toString();
-            }
-            const payload = {
-                ...form,
-                table_id: form.table_id ? parseInt(form.table_id, 10) : undefined,
-                reservation_time: unixTime,
-                number_of_guests: parseInt(form.number_of_guests, 10)
+            console.log('Creating reservation...', form);
+
+            const reservationData = {
+                customer_name: form.customer_name.trim(),
+                phone: form.phone.trim(),
+                party_size: parseInt(form.party_size, 10),
+                table_id: parseInt(form.table_id, 10),
+                reservation_date: form.reservation_date,
+                reservation_time: form.reservation_time,
+                notes: form.notes.trim(),
+                status: 'pending' // Default status for new reservations
             };
-            await axios.post('/reservations/create', payload);
-            setSuccess(true);
-            setForm({ customer_name: '', customer_phone: '', number_of_guests: 1, reservation_time: '', table_id: '', status: '', notes: '' });
-        } catch (err) {
-            // Show backend error if available
-            let msg = 'จองโต๊ะไม่สำเร็จ กรุณาลองใหม่';
-            if (err.response && err.response.data && err.response.data.message) {
-                msg = err.response.data.message;
+
+            const response = await axios.post('/reservations', reservationData);
+            console.log('Reservation response:', response.data);
+
+            if (response.data.success) {
+                setSuccess(true);
+                toast.success('จองโต๊ะสำเร็จ!');
+                
+                // Reset form after successful reservation
+                setForm({
+                    customer_name: '',
+                    phone: '',
+                    party_size: 1,
+                    reservation_date: '',
+                    reservation_time: '',
+                    table_id: '',
+                    notes: ''
+                });
+
+                // Auto-hide success message after 5 seconds
+                setTimeout(() => {
+                    setSuccess(false);
+                }, 5000);
+            } else {
+                throw new Error(response.data.message || 'ไม่สามารถจองโต๊ะได้');
             }
-            setError(msg);
+        } catch (err) {
+            console.error('Reservation error:', err);
+            const errorMessage = err.response?.data?.message || err.message || 'การจองไม่สำเร็จ';
+            setError(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
     };
 
+    const getTomorrowDate = () => {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        return tomorrow.toISOString().split('T')[0];
+    };
+
+    const getCurrentTime = () => {
+        const now = new Date();
+        now.setHours(now.getHours() + 1); // Add 1 hour buffer
+        return now.toTimeString().slice(0, 5);
+    };
+
     return (
-        <div className="reserve-bg">
-            <div className="reserve-card">
-                <div className="reserve-header">
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="48" height="48" rx="12" fill="#1890ff" />
-                        <path d="M16 32L32 16M16 16h16v16" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    <h2>จองโต๊ะร้านอาหาร</h2>
-                </div>
-                <form onSubmit={handleSubmit} className="reserve-form">
-                    <label>
-                        ชื่อผู้จอง
-                        <input name="customer_name" value={form.customer_name} onChange={handleChange} placeholder="ชื่อ-นามสกุล" required />
-                    </label>
-                    <label>
-                        เบอร์โทรศัพท์
-                        <input name="customer_phone" value={form.customer_phone} onChange={handleChange} placeholder="เบอร์โทร" required />
-                    </label>
-                    <label>
-                        โต๊ะ (Table)
-                        <select name="table_id" value={form.table_id} onChange={handleChange} required className="reserve-select">
-                            <option value="">-- เลือกโต๊ะ --</option>
-                            {tables.length === 0 && <option disabled>ไม่มีข้อมูลโต๊ะ</option>}
-                            {tables.map((table) => (
-                                <option key={table.id} value={table.id}>{table.name || `โต๊ะ ${table.id}`}</option>
-                            ))}
-                        </select>
-                    </label>
-                    <label>
-                        จำนวนคน
-                        <input name="number_of_guests" type="number" min="1" value={form.number_of_guests} onChange={handleChange} placeholder="จำนวนคน" required />
-                    </label>
-                    <label>
-                        วันและเวลา
-                        <input name="reservation_time" type="datetime-local" value={form.reservation_time} onChange={handleChange} required />
-                    </label>
-                    <label className="reserve-label">
-                        สถานะ (status)
-                        <div className="reserve-select-wrapper">
-                            <select name="status" value={form.status} onChange={handleChange} required className="reserve-select">
-                                <option value="">-- เลือกสถานะ --</option>
-                                <option value="pending">รอยืนยัน</option>
-                                <option value="confirmed">ยืนยันแล้ว</option>
-                                <option value="cancelled">ยกเลิกการจอง</option>
-                                <option value="other">อื่นๆ (ระบุในหมายเหตุ)</option>
-                            </select>
+        <MainLayout>
+            <div className="reserve-table-page">
+                <div className="reserve-container">
+                    <div className="reserve-header">
+                        <h2 className="reserve-title">จองโต๊ะ</h2>
+                        <p className="reserve-subtitle">กรุณากรอกข้อมูลการจองให้ครบถ้วน</p>
+                    </div>
+
+                    {error && (
+                        <div className="reserve-error">
+                            <span>⚠️ {error}</span>
                         </div>
-                    </label>
-                    <label>
-                        หมายเหตุ (notes)
-                        <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)" rows={2} className="reserve-notes" />
-                    </label>
-                    <button type="submit" disabled={loading}>{loading ? 'กำลังจอง...' : 'จองโต๊ะ'}</button>
-                </form>
-                {success && <div className="reserve-success">✅ จองโต๊ะสำเร็จ!</div>}
-                {error && <div className="reserve-error">{error}</div>}
+                    )}
+
+                    {success && (
+                        <div className="reserve-success">
+                            <span>✅ จองโต๊ะสำเร็จ! เราจะติดต่อกลับเพื่อยืนยันการจอง</span>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="reserve-form">
+                        <div className="form-section">
+                            <h3>ข้อมูลลูกค้า</h3>
+                            
+                            <div className="form-group">
+                                <label htmlFor="customer_name">ชื่อลูกค้า *</label>
+                                <input
+                                    type="text"
+                                    id="customer_name"
+                                    name="customer_name"
+                                    value={form.customer_name}
+                                    onChange={handleChange}
+                                    placeholder="กรอกชื่อ-นามสกุล"
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="phone">หมายเลขโทรศัพท์ *</label>
+                                <input
+                                    type="tel"
+                                    id="phone"
+                                    name="phone"
+                                    value={form.phone}
+                                    onChange={handleChange}
+                                    placeholder="กรอกหมายเลขโทรศัพท์"
+                                    pattern="[0-9]{9,10}"
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="party_size">จำนวนลูกค้า *</label>
+                                <select
+                                    id="party_size"
+                                    name="party_size"
+                                    value={form.party_size}
+                                    onChange={handleChange}
+                                    required
+                                    disabled={loading}
+                                >
+                                    {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                                        <option key={num} value={num}>
+                                            {num} คน
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="form-section">
+                            <h3>วันและเวลาจอง</h3>
+                            
+                            <div className="form-group">
+                                <label htmlFor="reservation_date">วันที่จอง *</label>
+                                <input
+                                    type="date"
+                                    id="reservation_date"
+                                    name="reservation_date"
+                                    value={form.reservation_date}
+                                    onChange={handleChange}
+                                    min={getTomorrowDate()}
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="reservation_time">เวลาจอง *</label>
+                                <input
+                                    type="time"
+                                    id="reservation_time"
+                                    name="reservation_time"
+                                    value={form.reservation_time}
+                                    onChange={handleChange}
+                                    min="10:00"
+                                    max="21:00"
+                                    required
+                                    disabled={loading}
+                                />
+                                <small>เวลาให้บริการ: 10:00 - 21:00 น.</small>
+                            </div>
+                        </div>
+
+                        <div className="form-section">
+                            <h3>เลือกโต๊ะ</h3>
+                            
+                            <div className="form-group">
+                                <label htmlFor="table_id">โต๊ะที่ต้องการจอง *</label>
+                                {fetchingTables ? (
+                                    <div className="loading">กำลังโหลดรายการโต๊ะ...</div>
+                                ) : (
+                                    <select
+                                        id="table_id"
+                                        name="table_id"
+                                        value={form.table_id}
+                                        onChange={handleChange}
+                                        required
+                                        disabled={loading}
+                                    >
+                                        <option value="">-- เลือกโต๊ะ --</option>
+                                        {tables.map(table => (
+                                            <option key={table.id} value={table.id}>
+                                                โต๊ะ {table.table_number} - {table.capacity} ที่นั่ง
+                                                {table.name && ` (${table.name})`}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                                
+                                {tables.length === 0 && !fetchingTables && (
+                                    <div className="no-tables">
+                                        ขออภัย ไม่มีโต๊ะว่างในขณะนี้
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="form-section">
+                            <h3>หมายเหตุเพิ่มเติม</h3>
+                            
+                            <div className="form-group">
+                                <label htmlFor="notes">หมายเหตุ (ถ้ามี)</label>
+                                <textarea
+                                    id="notes"
+                                    name="notes"
+                                    value={form.notes}
+                                    onChange={handleChange}
+                                    placeholder="ความต้องการพิเศษ หรือข้อมูลเพิ่มเติม"
+                                    rows="3"
+                                    disabled={loading}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-actions">
+                            <button 
+                                type="submit" 
+                                className="submit-btn"
+                                disabled={loading || tables.length === 0}
+                            >
+                                {loading ? 'กำลังจอง...' : 'ยืนยันการจอง'}
+                            </button>
+                            
+                            <button 
+                                type="button" 
+                                className="reset-btn"
+                                onClick={() => {
+                                    setForm({
+                                        customer_name: '',
+                                        phone: '',
+                                        party_size: 1,
+                                        reservation_date: '',
+                                        reservation_time: '',
+                                        table_id: '',
+                                        notes: ''
+                                    });
+                                    setError(null);
+                                    setSuccess(false);
+                                }}
+                                disabled={loading}
+                            >
+                                ล้างข้อมูล
+                            </button>
+                        </div>
+                    </form>
+
+                    <div className="reservation-info">
+                        <h3>เงื่อนไขการจอง</h3>
+                        <ul>
+                            <li>การจองจะมีผลหลังจากได้รับการยืนยันจากทางร้าน</li>
+                            <li>กรุณามาถึงตรงเวลาที่จอง หากสายเกิน 15 นาทีจะยกเลิกการจองอัตโนมัติ</li>
+                            <li>หากต้องการยกเลิกหรือเปลี่ยนแปลงการจอง กรุณาแจ้งล่วงหน้าอย่างน้อย 2 ชั่วโมง</li>
+                            <li>ทางร้านขอสงวนสิทธิ์ในการปฏิเสธการจองในกรณีที่มีลูกค้าเต็ม</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
-            <style>{`
-        .reserve-bg { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(120deg, #e0e7ff 0%, #f0f2f5 100%); }
-        .reserve-card { background: #fff; border-radius: 16px; box-shadow: 0 8px 32px rgba(24, 144, 255, 0.10), 0 1.5px 4px rgba(0,0,0,0.04); padding: 36px 28px 28px 28px; min-width: 340px; max-width: 98vw; }
-        .reserve-header { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 18px; }
-        .reserve-header svg { margin-bottom: 2px; }
-        .reserve-header h2 { font-size: 1.3rem; font-weight: 600; color: #222; margin: 0; }
-        .reserve-form { display: flex; flex-direction: column; gap: 14px; }
-        .reserve-form label { font-size: 1rem; color: #333; display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
-        .reserve-form input, .reserve-form textarea, .reserve-select {
-          padding: 10px;
-          border-radius: 6px;
-          border: 1.5px solid #d9d9d9;
-          font-size: 1rem;
-          background: #fafcff;
-          transition: border 0.2s;
-          font-family: inherit;
-        }
-        .reserve-form input:focus, .reserve-form textarea:focus, .reserve-select:focus {
-          outline: none;
-          border-color: #1890ff;
-          background: #fff;
-        }
-        .reserve-select-wrapper {
-          position: relative;
-        }
-        .reserve-select {
-          appearance: none;
-          -webkit-appearance: none;
-          -moz-appearance: none;
-          background: #fafcff url('data:image/svg+xml;utf8,<svg fill="%231890ff" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 7.293a1 1 0 011.414 0L10 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>') no-repeat right 0.75rem center/1.2em auto;
-          padding-right: 2.5em;
-          cursor: pointer;
-        }
-        .reserve-notes {
-          min-height: 38px;
-          resize: vertical;
-        }
-        .reserve-form button { padding: 12px; border-radius: 6px; background: linear-gradient(90deg, #1890ff 60%, #40a9ff 100%); color: #fff; border: none; font-size: 1.1rem; font-weight: 500; cursor: pointer; margin-top: 8px; box-shadow: 0 2px 8px rgba(24,144,255,0.08); transition: background 0.2s, box-shadow 0.2s; }
-        .reserve-form button:disabled { background: #b5d6fa; cursor: not-allowed; }
-        .reserve-success { color: #52c41a; margin-top: 14px; text-align: center; font-size: 1.1rem; }
-        .reserve-error { color: #ff4d4f; margin-top: 14px; text-align: center; font-size: 1.1rem; }
-      `}</style>
-        </div>
+        </MainLayout>
     );
 }
 

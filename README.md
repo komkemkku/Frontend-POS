@@ -1,12 +1,78 @@
-# React + Vite
+# 🍽️ ระบบ POS ร้านอาหาร
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ระบบจุดขายสำหรับร้านอาหารที่ทันสมัย รองรับการสั่งอาหารผ่าน QR Code
 
-Currently, two official plugins are available:
+## ✨ คุณสมบัติหลัก
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### สำหรับพนักงาน/แอดมิน
+- 🔐 ระบบเข้าสู่ระบบที่ปลอดภัย
+- 📊 แดชบอร์ดภาพรวมโต๊ะ
+- 🍕 จัดการเมนูและหมวดหมู่
+- 🪑 จัดการโต๊ะ
+- 📱 สร้างและพิมพ์ QR Code สำหรับลูกค้า
+- 📝 จัดการคำสั่งซื้อ
+- 💰 ระบบการชำระเงิน
+- 👥 จัดการพนักงาน
+- 📈 รายงานยอดขาย
 
-## Expanding the ESLint configuration
+### สำหรับลูกค้า
+- 📱 สแกน QR Code เพื่อเข้าสู่เมนู
+- 🚫 ไม่ต้องเข้าสู่ระบบ
+- 🍽️ ดูเมนูแบบเรียลไทม์
+- 🛒 สั่งอาหารผ่านระบบ
+- 📋 ดูประวัติการสั่งในวันนั้น
+- 🎯 ระบุโต๊ะอัตโนมัติ
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🚀 การใช้งาน
+
+### สำหรับพนักงาน
+1. เปิดเว็บไซต์ → จะเข้าสู่หน้าเข้าสู่ระบบโดยอัตโนมัติ
+2. เข้าสู่ระบบด้วย username และ password
+3. ไปที่ "QR Code สำหรับลูกค้า" เพื่อสร้างและพิมพ์ QR Code
+4. วาง QR Code บนโต๊ะลูกค้า
+
+### สำหรับลูกค้า
+1. สแกน QR Code ที่โต๊ะ
+2. เข้าสู่เมนูโดยอัตโนมัติ (ไม่ต้องเข้าสู่ระบบ)
+3. เลือกอาหารที่ต้องการ
+4. สั่งอาหารผ่านระบบ
+5. รอพนักงานเสิร์ฟ
+
+## 🛠 Installation
+
+```bash
+npm install
+npm run dev
+```
+
+## 📱 URL Structure
+
+### สำหรับพนักงาน/แอดมิน
+- `/` - หน้าเข้าสู่ระบบ
+- `/login` - หน้าเข้าสู่ระบบ
+- `/dashboard` - แดชบอร์ดภาพรวมโต๊ะ
+- `/admin/menus` - จัดการเมนู
+- `/admin/tables` - จัดการโต๊ะ
+- `/admin/qrcode` - จัดการ QR Code
+- `/admin/staffs` - จัดการพนักงาน
+- `/admin/reports` - รายงาน
+
+### สำหรับลูกค้า (เข้าผ่าน QR Code)
+- `/customer/table/:tableId` - เมนูสำหรับลูกค้า (ระบุโต๊ะ)
+
+## 🎯 การเปลี่ยนแปลงสำคัญ
+
+1. **หน้าแรกเป็นหน้าเข้าสู่ระบบ** - เพื่อความปลอดภัยและความเป็นระเบียบ
+2. **ลูกค้าเข้าผ่าน QR Code เท่านั้น** - ไม่มีหน้าลูกค้าแยก
+3. **พนักงานจัดการ QR Code** - สร้าง พิมพ์ และจัดการได้ง่าย
+4. **ระบุโต๊ะอัตโนมัติ** - ลูกค้าไม่ต้องเลือกโต๊ะ
+5. **ประวัติการสั่งรายวัน** - ลูกค้าดูประวัติการสั่งของโต๊ะได้
+
+## 🔧 Technology Stack
+
+- **Frontend**: React + Vite
+- **Routing**: React Router DOM
+- **HTTP Client**: Axios
+- **QR Code**: qrcode.react
+- **Styling**: CSS3 + Flexbox/Grid
+- **Icons**: Emoji + CSS

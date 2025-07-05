@@ -22,9 +22,17 @@ export default function CategoryPage() {
     setLoading(true);
     try {
       const res = await axios.get('/categories');
-      setCategories(res.data.data || []);
-    } catch {
+      console.log('Categories response:', res.data);
+      
+      if (res.data.success) {
+        setCategories(res.data.data || []);
+      } else {
+        throw new Error(res.data.message || 'ไม่สามารถโหลดข้อมูลประเภทสินค้าได้');
+      }
+    } catch (err) {
+      console.error('Categories fetch error:', err);
       setCategories([]);
+      toast.error(err.response?.data?.message || 'โหลดข้อมูลประเภทสินค้าไม่สำเร็จ');
     }
     setLoading(false);
   };
@@ -43,11 +51,16 @@ export default function CategoryPage() {
     setConfirmOpen(false);
     if (!deleteId) return;
     try {
-      await axios.delete(`/categories/${deleteId}`);
-      toast.success('ลบประเภทสินค้าสำเร็จ!');
-      fetchCategories();
-    } catch {
-      toast.error('เกิดข้อผิดพลาดในการลบประเภทสินค้า');
+      const response = await axios.delete(`/categories/${deleteId}`);
+      if (response.data.success) {
+        toast.success('ลบประเภทสินค้าสำเร็จ!');
+        fetchCategories();
+      } else {
+        throw new Error(response.data.message || 'ไม่สามารถลบประเภทสินค้าได้');
+      }
+    } catch (err) {
+      console.error('Delete category error:', err);
+      toast.error(`ลบประเภทสินค้าไม่สำเร็จ: ${err.response?.data?.message || err.message}`);
     }
     setDeleteId(null);
   };

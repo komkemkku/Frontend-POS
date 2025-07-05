@@ -1,213 +1,125 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import '../styles/modern.css';
 
 function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [localError, setLocalError] = useState('');
   const { login, loading, error, user } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [touched, setTouched] = useState({ username: false, password: false });
-  const [apiError, setApiError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard', { replace: true });
+      navigate('/dashboard');
     }
   }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setApiError(null);
+    setLocalError(''); // Clear previous errors
+    
     if (!username || !password) {
-      setTouched({ username: true, password: true });
+      setLocalError('กรุณากรอก username และ password');
       return;
     }
-    try {
-      await login(username, password);
-      // ไม่ต้อง navigate ที่นี่ ให้ useEffect จัดการ
-    } catch (err) {
-      setApiError(err?.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+    
+    const result = await login(username, password);
+    
+    if (result.success) {
+      navigate('/dashboard');
+    } else {
+      setLocalError(result.error || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
     }
   };
 
   return (
-    <div className="login-bg">
-      <div className="login-card">
-        <div className="login-logo">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="48" height="48" rx="12" fill="#1890ff"/>
-            <text x="50%" y="56%" textAnchor="middle" fill="#fff" fontSize="18" fontWeight="bold" fontFamily="sans-serif" dy=".3em">DEV</text>
-          </svg>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100 px-4 py-8">
+      <div className="w-full max-w-md">
+        {/* Brand Section */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">ระบบ POS ร้านอาหาร</h1>
+          <p className="text-gray-600">เข้าสู่ระบบสำหรับพนักงานและแอดมิน</p>
         </div>
-        <h2 className="login-title">DEV POS</h2>
-        <form className="login-form" onSubmit={handleSubmit} autoComplete="off">
-          <div className="login-group">
-            <label htmlFor="username">Username</label>
-            <div className="login-input-wrapper">
+
+        {/* Login Form Card */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                ชื่อผู้ใช้
+              </label>
               <input
                 type="text"
-                id="username"
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-500"
+                placeholder="กรอกชื่อผู้ใช้"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                onBlur={() => setTouched(t => ({ ...t, username: true }))}
-                className={`login-input${touched.username && !username ? ' login-input-error' : ''}`}
-                placeholder="Enter your username"
                 autoFocus
               />
             </div>
-            {touched.username && !username && (
-              <span className="login-error">กรุณากรอกชื่อผู้ใช้</span>
-            )}
-          </div>
-          <div className="login-group">
-            <label htmlFor="password">Password</label>
-            <div className="login-input-wrapper">
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                รหัสผ่าน
+              </label>
               <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
+                type="password"
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-500"
+                placeholder="กรอกรหัสผ่าน"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onBlur={() => setTouched(t => ({ ...t, password: true }))}
-                className={`login-input${touched.password && !password ? ' login-input-error' : ''}`}
-                placeholder="Enter your password"
               />
-              <button
-                type="button"
-                className="login-toggle-password"
-                tabIndex={-1}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                onClick={() => setShowPassword((v) => !v)}
-              >
-                {showPassword ? (
-                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="#888" strokeWidth="2" d="M3 12s3.6-7 9-7 9 7 9 7-3.6 7-9 7-9-7-9-7Z"/><circle cx="12" cy="12" r="3" stroke="#888" strokeWidth="2"/></svg>
-                ) : (
-                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="#888" strokeWidth="2" d="M17.94 17.94A9.97 9.97 0 0 1 12 19c-5.4 0-9-7-9-7a18.6 18.6 0 0 1 4.06-5.94M9.88 9.88A3 3 0 0 1 12 9c1.66 0 3 1.34 3 3 0 .42-.09.82-.24 1.18"/><path stroke="#888" strokeWidth="2" d="m1 1 22 22"/></svg>
-                )}
-              </button>
             </div>
-            {touched.password && !password && (
-              <span className="login-error">กรุณากรอกรหัสผ่าน</span>
+            
+            {(error || localError) && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center space-x-2">
+                <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm font-medium">{localError || error}</span>
+              </div>
             )}
+            
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover-scale-102 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              {loading && (
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
+              <span className="text-white">{loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}</span>
+            </button>
+          </form>
+          
+          {/* Help Section */}
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-500 mt-05" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-blue-800 mb-1">ต้องการความช่วยเหลือ?</h3>
+                  <p className="text-sm text-blue-700">หากมีปัญหาในการเข้าสู่ระบบ กรุณาติดต่อผู้ดูแลระบบ</p>
+                </div>
+              </div>
+            </div>
           </div>
-          {(error || apiError) && <div className="login-error login-error-server">{error || apiError}</div>}
-          <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
-          </button>
-        </form>
+        </div>
+        
+        {/* Footer */}
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-500">© 2024 ระบบ POS ร้านอาหาร - พัฒนาเพื่อการบริการที่ดีขึ้น</p>
+        </div>
       </div>
-      <style>{`
-        .login-input-wrapper {
-          display: flex;
-          align-items: center;
-          position: relative;
-        }
-        .login-bg {
-          min-height: 100vh;
-          background: linear-gradient(120deg, #e0e7ff 0%, #f0f2f5 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .login-card {
-          background: #fff;
-          border-radius: 16px;
-          box-shadow: 0 8px 32px rgba(24, 144, 255, 0.10), 0 1.5px 4px rgba(0,0,0,0.04);
-          padding: 40px 32px 32px 32px;
-          width: 100%;
-          max-width: 370px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-        .login-logo {
-          margin-bottom: 16px;
-        }
-        .login-title {
-          font-size: 1.6rem;
-          font-weight: 600;
-          color: #222;
-          margin-bottom: 28px;
-          text-align: center;
-          letter-spacing: 1px;
-        }
-        .login-form {
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          gap: 18px;
-        }
-        .login-group {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-        .login-input {
-          width: 100%;
-          padding: 10px 12px;
-          border-radius: 6px;
-          border: 1.5px solid #d9d9d9;
-          font-size: 1rem;
-          background: #fafcff;
-          transition: border 0.2s;
-        }
-        .login-input:focus {
-          outline: none;
-          border-color: #1890ff;
-          background: #fff;
-        }
-        .login-input-error {
-          border-color: #ff4d4f;
-          background: #fff1f0;
-        }
-        .login-toggle-password {
-          background: none;
-          border: none;
-          position: absolute;
-          right: 8px;
-          top: 50%;
-          transform: translateY(-50%);
-          cursor: pointer;
-          padding: 0 2px;
-          display: flex;
-          align-items: center;
-        }
-        .login-btn {
-          width: 100%;
-          padding: 12px 0;
-          background: linear-gradient(90deg, #1890ff 60%, #40a9ff 100%);
-          color: #fff;
-          font-size: 1.1rem;
-          font-weight: 500;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          margin-top: 8px;
-          box-shadow: 0 2px 8px rgba(24,144,255,0.08);
-          transition: background 0.2s, box-shadow 0.2s;
-        }
-        .login-btn:disabled {
-          background: #b5d6fa;
-          cursor: not-allowed;
-        }
-        .login-error {
-          color: #ff4d4f;
-          font-size: 0.97rem;
-          margin-top: 2px;
-          text-align: left;
-        }
-        .login-error-server {
-          text-align: center;
-          margin-bottom: 2px;
-        }
-        @media (max-width: 480px) {
-          .login-card {
-            padding: 28px 8px 20px 8px;
-            max-width: 98vw;
-          }
-        }
-      `}</style>
     </div>
   );
 }

@@ -1,71 +1,58 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { loginApi, getStaffInfoApi } from '../api/authApi';
-import { useNavigate } from 'react-router-dom';
 import { setCookie, removeCookie } from '../utils/cookie';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem('token'));
-    const [loading, setLoading] = useState(false); // สำหรับ Loading ตอนกดปุ่ม Login
-    const [authLoading, setAuthLoading] = useState(true); // สำหรับ Loading ตอนเปิดแอปครั้งแรก
+    const [token, setToken] = useState(null);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const navigate = useNavigate();
 
     useEffect(() => {
         const checkLoggedIn = async () => {
-            const storedToken = localStorage.getItem('token');
-            if (storedToken) {
-                try {
+            try {
+                const savedToken = localStorage.getItem('token');
+                if (savedToken) {
+                    setToken(savedToken);
                     const response = await getStaffInfoApi();
-                    setUser(response.data.data);
-                    setToken(storedToken);
-                } catch (err) {
-                    console.error("Token ไม่ถูกต้อง, กำลังลบ Token...", err);
-                    localStorage.removeItem('token');
+                    setUser(response.data);
                 }
+            } catch (err) {
+                localStorage.removeItem('token');
+                removeCookie('token');
+                setToken(null);
+                setUser(null);
             }
-            setAuthLoading(false);
         };
-
         checkLoggedIn();
     }, []);
 
     const login = async (username, password) => {
         setLoading(true);
         setError(null);
+        
         try {
-            console.log('กำลังส่ง Login request...', { username, password: '***' });
-            const loginResponse = await loginApi(username, password);
-            console.log('Login response:', loginResponse);
+            const response = await loginApi(username, password);
             
-            // รองรับทั้งกรณี token อยู่ใน data.data หรือ data โดยตรง
-            let token = null;
-            if (loginResponse.data?.data?.token) {
-                token = loginResponse.data.data.token;
-            } else if (loginResponse.data?.token) {
-                token = loginResponse.data.token;
+            const { token, user } = response.data;
+            
+            if (!token || !user) {
+                throw new Error('ข้อมูลการเข้าสู่ระบบไม่ครบถ้วน');
             }
-            if (!token) throw new Error('ไม่พบ token จากเซิร์ฟเวอร์');
-
-            console.log('Token ที่ได้:', token);
+            
             localStorage.setItem('token', token);
             setToken(token);
-            setCookie('token', token, 1); // เก็บ cookie 1 วัน
-
-            // หลังจากได้ Token ให้ดึงข้อมูลผู้ใช้ทันที
-            console.log('กำลังดึงข้อมูลผู้ใช้...');
-            const staffInfoResponse = await getStaffInfoApi();
-            console.log('Staff info response:', staffInfoResponse);
-            setUser(staffInfoResponse.data.data);
+            setUser(user);
+            setCookie('token', token, 1);
+            
+            return { success: true };
         } catch (err) {
-            console.error('Login error:', err);
-            setError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
-            localStorage.removeItem('token');
-            removeCookie('token');
-            setToken(null);
-            setUser(null);
+            // ใช้ error message จาก API authApi.js ที่ปรับปรุงแล้ว
+            const errorMessage = err.message || 'เข้าสู่ระบบไม่สำเร็จ';
+            setError(errorMessage);
+            return { success: false, error: errorMessage };
         } finally {
             setLoading(false);
         }
@@ -76,11 +63,20 @@ export const AuthProvider = ({ children }) => {
         removeCookie('token');
         setToken(null);
         setUser(null);
-        navigate('/login');
+        setError(null);
+    };
+
+    const value = {
+        user,
+        token,
+        loading,
+        error,
+        login,
+        logout
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, loading, error, authLoading }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

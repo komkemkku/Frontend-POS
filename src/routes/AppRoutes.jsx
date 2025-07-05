@@ -14,20 +14,23 @@ import AdminReservationPage from '../admin/ReservationPage';
 import AdminStaffPage from '../admin/StaffPage';
 import AdminReportPage from '../admin/ReportPage';
 import CategoryPage from '../admin/CategoryPage';
+import QRCodeManagePage from '../admin/QRCodeManagePage';
 
-
-
-
-
-import HomePage from '../pages/HomePage';
-import ReserveTablePage from '../pages/ReserveTablePage';
 import MenuPage from '../pages/MenuPage';
-import ScanQRPage from '../pages/ScanQRPage';
+import CustomerMenuPage from '../pages/CustomerMenuPage';
 
 function AppRoutes() {
     return (
         <Routes>
+            {/* Default Route - เริ่มต้นที่หน้าเข้าสู่ระบบ */}
+            <Route path="/" element={<LoginPage />} />
             <Route path="/login" element={<LoginPage />} />
+            
+            {/* Customer Routes - ไม่ต้อง login (เข้าผ่าน QR Code) */}
+            <Route path="/customer/table/:tableId" element={<CustomerMenuPage />} />
+            <Route path="/customer/table/:tableId/menu" element={<CustomerMenuPage />} />
+            
+            {/* Staff/Admin Routes - ต้อง login */}
             <Route
                 path="/dashboard"
                 element={
@@ -38,6 +41,14 @@ function AppRoutes() {
             />
             <Route
                 path="/orders"
+                element={
+                    <ProtectedRoute>
+                        <OrderManagePage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/admin/orders"
                 element={
                     <ProtectedRoute>
                         <OrderManagePage />
@@ -57,16 +68,11 @@ function AppRoutes() {
                 <Route path="menus" element={<AdminMenuPage />} />
                 <Route path="categories" element={<CategoryPage />} />
                 <Route path="tables" element={<AdminTablePage />} />
+                <Route path="qrcode" element={<QRCodeManagePage />} />
                 <Route path="reservations" element={<AdminReservationPage />} />
                 <Route path="staffs" element={<AdminStaffPage />} />
                 <Route path="reports" element={<AdminReportPage />} />
             </Route>
-            {/* Customer Facing */}
-            <Route path="/reserve" element={<ReserveTablePage />} />
-            <Route path="/scan-qr" element={<ScanQRPage />} />
-            <Route path="/menu" element={<MenuPage />} />
-            {/* Route หน้าแรก - Redirect to login */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
     );
 }
