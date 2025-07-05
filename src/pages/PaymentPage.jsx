@@ -64,9 +64,9 @@ function PaymentPage() {
       const data = await adminApi.orders.getList();
       console.log('Raw orders data:', data);
       
-      // กรองแค่ออเดอร์ที่เสิร์ฟแล้วเท่านั้น (ไม่รวม completed เพราะชำระแล้ว)
+      // กรองแค่ออเดอร์ที่เสร็จแล้ว (served) และยังไม่ได้ชำระเงิน (ไม่ใช่ completed)
       let payableOrders = (Array.isArray(data) ? data : []).filter(order => 
-        order.status === 'served'
+        order.status === 'served' // เฉพาะออเดอร์ที่เสิร์ฟแล้วเท่านั้น
       );
       
       console.log('Filtered served orders:', payableOrders);
@@ -205,7 +205,7 @@ function PaymentPage() {
         order_id: orderDetails.id,
         amount_paid: totalAfterDiscount,
         payment_method: paymentMethod,
-        transaction_time: new Date().toISOString()
+        transaction_time: Math.floor(Date.now() / 1000).toString() // ส่งเป็น Unix timestamp string
       };
       
       console.log('Creating payment with data:', paymentData);
