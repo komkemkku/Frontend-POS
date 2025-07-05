@@ -1,4 +1,4 @@
-# 🍽️ POS Frontend System
+# 🍽️ POS Fr### 🛒 Order Management Systemntend System
 
 Modern Point of Sale (POS) Frontend built with React and Vite for restaurant management
 
@@ -161,34 +161,44 @@ Seamless integration with Go backend for:
 ✅ **API Error Handling**  
 ✅ **Responsive Design**  
 
+## 📊 Analytics & Reporting
+
+- **Real-time Dashboard**: Live order tracking and sales metrics
+- **Sales Reports**: Daily, weekly, monthly revenue analysis  
+- **Order Analytics**: Popular items, peak hours, customer patterns
+- **Performance Metrics**: Order completion times, staff efficiency
+
+## 🔒 Security Features
+
+- **JWT Authentication**: Secure admin login system
+- **Role-based Access**: Different permissions for staff levels
+- **Session Management**: Automatic logout and token refresh
+- **Data Validation**: Input sanitization and error handling
+- **HTTPS Ready**: SSL/TLS encryption support
+
+## 🚀 Performance Optimizations
+
+- **Code Splitting**: Lazy loading for faster initial load
+- **Image Optimization**: Compressed assets and modern formats
+- **Bundle Analysis**: Optimized build sizes
+- **Caching Strategy**: Smart browser and API caching
+- **CDN Ready**: Static asset delivery optimization
+
+## 🌐 Internationalization
+
+- **Multi-language Support**: Thai and English interface
+- **Currency Formatting**: Local currency display
+- **Date/Time Localization**: Regional format support
+- **RTL Support**: Right-to-left language compatibility
+
+## 🛡️ Quality Assurance
+
+- **Error Boundaries**: Graceful error handling
+- **Loading States**: User feedback during operations
+- **Form Validation**: Real-time input validation
+- **Accessibility**: WCAG compliance for all users
+- **Cross-browser**: Tested on major browsers
+
 ---
 
 **Built with ❤️ for modern restaurant operations**
-- `/` - หน้าเข้าสู่ระบบ
-- `/login` - หน้าเข้าสู่ระบบ
-- `/dashboard` - แดชบอร์ดภาพรวมโต๊ะ
-- `/admin/menus` - จัดการเมนู
-- `/admin/tables` - จัดการโต๊ะ
-- `/admin/qrcode` - จัดการ QR Code
-- `/admin/staffs` - จัดการพนักงาน
-- `/admin/reports` - รายงาน
-
-### สำหรับลูกค้า (เข้าผ่าน QR Code)
-- `/customer/table/:tableId` - เมนูสำหรับลูกค้า (ระบุโต๊ะ)
-
-## 🎯 การเปลี่ยนแปลงสำคัญ
-
-1. **หน้าแรกเป็นหน้าเข้าสู่ระบบ** - เพื่อความปลอดภัยและความเป็นระเบียบ
-2. **ลูกค้าเข้าผ่าน QR Code เท่านั้น** - ไม่มีหน้าลูกค้าแยก
-3. **พนักงานจัดการ QR Code** - สร้าง พิมพ์ และจัดการได้ง่าย
-4. **ระบุโต๊ะอัตโนมัติ** - ลูกค้าไม่ต้องเลือกโต๊ะ
-5. **ประวัติการสั่งรายวัน** - ลูกค้าดูประวัติการสั่งของโต๊ะได้
-
-## 🔧 Technology Stack
-
-- **Frontend**: React + Vite
-- **Routing**: React Router DOM
-- **HTTP Client**: Axios
-- **QR Code**: qrcode.react
-- **Styling**: CSS3 + Flexbox/Grid
-- **Icons**: Emoji + CSS
