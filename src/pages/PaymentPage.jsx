@@ -64,12 +64,12 @@ function PaymentPage() {
       const data = await adminApi.orders.getList();
       console.log('Raw orders data:', data);
       
-      // กรองแค่ออเดอร์ที่เสร็จแล้ว (served) และยังไม่ได้ชำระเงิน (ไม่ใช่ completed)
+      // กรองแค่ออเดอร์ที่เสร็จสิ้นแล้ว (completed) และยังไม่ได้ชำระเงิน
       let payableOrders = (Array.isArray(data) ? data : []).filter(order => 
-        order.status === 'served' // เฉพาะออเดอร์ที่เสิร์ฟแล้วเท่านั้น
+        order.status === 'completed' // เฉพาะออเดอร์ที่เสร็จสิ้นแล้วเท่านั้น
       );
       
-      console.log('Filtered served orders:', payableOrders);
+      console.log('Filtered completed orders:', payableOrders);
       
       // Map field names to ensure consistency
       payableOrders = payableOrders.map(order => ({
@@ -88,7 +88,7 @@ function PaymentPage() {
       
       // Add fallback data ONLY if completely empty and in development
       if (payableOrders.length === 0 && process.env.NODE_ENV === 'development') {
-        console.log('No served orders found, adding fallback data for development');
+        console.log('No completed orders found, adding fallback data for development');
         const now = Math.floor(Date.now() / 1000);
         const oneHourAgo = now - (1 * 60 * 60);
         const thirtyMinutesAgo = now - (30 * 60);
@@ -98,7 +98,7 @@ function PaymentPage() {
             id: 999,
             table_id: 5,
             table_number: 5,
-            status: 'served',
+            status: 'completed',
             total_amount: 580,
             created_at: new Date(oneHourAgo * 1000).toISOString(),
             customer_name: 'คุณสมพร (Demo)',
@@ -420,7 +420,7 @@ function PaymentPage() {
           {/* Orders List */}
           <div className="orders-section">
             <div className="section-header">
-              <h3 className="section-title">เลือกออเดอร์ที่ต้องการชำระเงิน</h3>
+              <h3 className="section-title">เลือกออเดอร์ที่เสร็จสิ้นแล้วเพื่อชำระเงิน</h3>
               <div className="orders-count">
                 {orders.length} ออเดอร์
               </div>
