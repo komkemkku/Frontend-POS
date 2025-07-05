@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Test API Connection</h1>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testDashboard()">Test Dashboard</button>
+    <div id="result"></div>
+
+    <script>
+        const API_BASE = 'https://backend-pos-production.up.railway.app';
+        
+        async function testLogin() {
+            const result = document.getElementById('result');
+            try {
+                const response = await fetch(`${API_BASE}/staff/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'password'
+                    })
+                });
+                
+                const data = await response.json();
+                result.innerHTML = `<h3>Login Response:</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                
+                // Store token for dashboard test
+                if (data.data && data.data.token) {
+                    localStorage.setItem('test_token', data.data.token);
+                }
+            } catch (error) {
+                result.innerHTML = `<h3>Login Error:</h3><pre>${error.message}</pre>`;
+            }
+        }
+        
+        async function testDashboard() {
+            const result = document.getElementById('result');
+            const token = localStorage.getItem('test_token');
+            
+            if (!token) {
+                result.innerHTML = '<h3>Error:</h3>No token found. Please login first.';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/summary`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                result.innerHTML = `<h3>Dashboard Response:</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                result.innerHTML = `<h3>Dashboard Error:</h3><pre>${error.message}</pre>`;
+            }
+        }
+    </script>
+</body>
+</html>

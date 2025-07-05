@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Refresh Function</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f3f4f6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .test-section {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #3b82f6;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .log {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .data-display {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .timestamp {
+            color: #10b981;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 ทดสอบฟังก์ชัน Refresh Dashboard</h1>
+        
+        <div class="test-section">
+            <h3>📊 Current Dashboard Data</h3>
+            <div id="currentData" class="data-display">Loading...</div>
+            <p><strong>Last Refresh:</strong> <span id="lastRefresh" class="timestamp">-</span></p>
+        </div>
+
+        <div class="test-section">
+            <h3>🎮 Test Controls</h3>
+            <button id="refreshBtn" onclick="testRefresh()">
+                <span id="refreshIcon">🔄</span> Refresh Data
+            </button>
+            <button onclick="testAPI()">🌐 Test API Direct</button>
+            <button onclick="clearLogs()">🗑️ Clear Logs</button>
+            <button onclick="simulateError()">⚠️ Simulate Error</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Console Logs</h3>
+            <div id="logs" class="log">Ready to test...\n</div>
+        </div>
+    </div>
+
+    <script>
+        let refreshing = false;
+        let dashboardData = null;
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('logs');
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+
+        function updateDataDisplay() {
+            const dataElement = document.getElementById('currentData');
+            if (dashboardData) {
+                dataElement.innerHTML = `
+                    <strong>Today Revenue:</strong> ฿${dashboardData.data?.today_revenue?.toLocaleString() || 'N/A'}<br>
+                    <strong>Today Orders:</strong> ${dashboardData.data?.today_orders || 'N/A'}<br>
+                    <strong>Today Customers:</strong> ${dashboardData.data?.today_customers || 'N/A'}<br>
+                    <strong>Avg Order Time:</strong> ${dashboardData.data?.avg_order_time_minutes || 'N/A'} minutes
+                `;
+            } else {
+                dataElement.innerHTML = 'No data available';
+            }
+            
+            document.getElementById('lastRefresh').textContent = new Date().toLocaleTimeString();
+        }
+
+        async function testRefresh() {
+            if (refreshing) return;
+            
+            log('🔄 Starting refresh test...');
+            refreshing = true;
+            
+            const refreshBtn = document.getElementById('refreshBtn');
+            const refreshIcon = document.getElementById('refreshIcon');
+            
+            refreshBtn.disabled = true;
+            refreshIcon.classList.add('loading');
+            
+            try {
+                // Get auth token
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    throw new Error('No auth token found. Please login first.');
+                }
+                
+                log('📡 Making API request...');
+                const response = await fetch('https://backend-pos-production.up.railway.app/summary', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                log('✅ API response received');
+                log(`📊 Data: Revenue=${data.data?.today_revenue}, Orders=${data.data?.today_orders}`);
+                
+                // Simulate data variation
+                if (data.data) {
+                    const variance = (Math.random() - 0.5) * 100;
+                    const originalRevenue = data.data.today_revenue;
+                    data.data.today_revenue = Math.max(0, originalRevenue + variance);
+                    log(`💰 Revenue variation: ${originalRevenue} → ${data.data.today_revenue}`);
+                }
+                
+                dashboardData = data;
+                updateDataDisplay();
+                log('🎉 Refresh completed successfully!');
+                
+            } catch (error) {
+                log(`❌ Refresh failed: ${error.message}`);
+            } finally {
+                refreshing = false;
+                refreshBtn.disabled = false;
+                refreshIcon.classList.remove('loading');
+                log('🏁 Refresh process ended');
+            }
+        }
+
+        async function testAPI() {
+            log('🌐 Testing API connection...');
+            
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    log('❌ No auth token. Testing without authentication...');
+                    return;
+                }
+                
+                const response = await fetch('https://backend-pos-production.up.railway.app/summary', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`📡 API Status: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ API is working correctly');
+                    log(`📊 Sample data: ${JSON.stringify(data.data, null, 2)}`);
+                } else {
+                    log('❌ API returned error');
+                }
+                
+            } catch (error) {
+                log(`❌ API test failed: ${error.message}`);
+            }
+        }
+
+        function simulateError() {
+            log('⚠️ Simulating error condition...');
+            
+            // Temporarily corrupt the token
+            const originalToken = localStorage.getItem('auth_token');
+            localStorage.setItem('auth_token', 'invalid_token');
+            
+            testRefresh().then(() => {
+                // Restore original token
+                if (originalToken) {
+                    localStorage.setItem('auth_token', originalToken);
+                    log('🔧 Token restored');
+                }
+            });
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').textContent = 'Logs cleared...\n';
+            log('🧹 Console cleared');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Refresh test page loaded');
+            log('💡 Click "Refresh Data" to test the refresh functionality');
+            
+            // Try to load initial data
+            testRefresh();
+        });
+    </script>
+</body>
+</html>
