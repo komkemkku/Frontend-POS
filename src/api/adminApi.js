@@ -470,7 +470,7 @@ export const adminApi = {
     // Dashboard
     getDashboardSummary: async () => {
         try {
-            const response = await dashboardApi.getSummary();
+            const response = await axios.get('/summary');
             return response.data?.data || response.data;
         } catch (error) {
             console.warn('Dashboard summary API not available:', error.message);

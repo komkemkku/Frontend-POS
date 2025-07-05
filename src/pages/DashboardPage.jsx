@@ -1,9 +1,8 @@
-
-
 import React, { useEffect, useState } from 'react';
 import { adminApi } from '../api';
 import { useAuth } from '../hooks/useAuth';
 import MainLayout from '../components/MainLayout';
+import './DashboardPage.css';
 
 function DashboardPage() {
   const [dashboardData, setDashboardData] = useState({
@@ -186,6 +185,38 @@ function DashboardPage() {
       
       // พยายามดึงข้อมูลสรุปจาก API หากมี
       // หมายเหตุ: ต้องรอให้หลังบ้านส่งข้อมูลจาก /summary API
+      // ข้อมูลที่ควรได้รับจาก Backend API /summary:
+      // {
+      //   "total_tables": 20,
+      //   "occupied_tables": 12,
+      //   "available_tables": 6,
+      //   "reserved_tables": 2,
+      //   "maintenance_tables": 0,
+      //   "today_orders": 45,
+      //   "today_revenue": 12500.50,
+      //   "pending_orders": 8,
+      //   "completed_orders": 35,
+      //   "cancelled_orders": 2,
+      //   "total_menu_items": 120,
+      //   "available_menu_items": 115,
+      //   "unavailable_menu_items": 5,
+      //   "total_staff": 12,
+      //   "active_staff": 8,
+      //   "peak_hour_info": {
+      //     "current_hour": 12,
+      //     "is_peak_hour": true,
+      //     "avg_orders_per_hour": 6.5
+      //   },
+      //   "payment_summary": {
+      //     "cash_payments": 8500.00,
+      //     "card_payments": 4000.50,
+      //     "online_payments": 0.00
+      //   },
+      //   "popular_items": [
+      //     {"menu_id": 1, "name": "ผัดไทย", "orders_count": 12},
+      //     {"menu_id": 5, "name": "ต้มยำกุ้ง", "orders_count": 8}
+      //   ]
+      // }
       try {
         const summaryData = await adminApi.getDashboardSummary();
         if (summaryData) {
@@ -214,255 +245,319 @@ function DashboardPage() {
 
   return (
     <MainLayout>
-      <div className="page-container">
-        {/* Header Section */}
-        <div className="content-card mb-6">
-          <div className="flex justify-between items-center">
+      <div className="dashboard-container">
+        <div className="dashboard-content">
+          {/* Header Section */}
+          <div className="dashboard-header">
             <div>
-              <h1 className="text-2xl font-bold mb-2">
-                <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  แดชบอร์ด POS
-                </span>
-              </h1>
-              <p className="text-sm text-gray-600">ภาพรวมการดำเนินงานของร้าน</p>
+              <h1 className="dashboard-title">แดชบอร์ด POS</h1>
+              <p className="dashboard-subtitle">ภาพรวมการดำเนินงานของร้าน - อัปเดตล่าสุด: {new Date().toLocaleTimeString('th-TH')}</p>
             </div>
-            <div className="text-right">
-              <p className="text-lg font-semibold text-gray-800">
+            <div className="dashboard-user-info">
+              <p className="user-welcome">
                 ยินดีต้อนรับ, {dashboardData.userInfo?.full_name || dashboardData.userInfo?.first_name + ' ' + dashboardData.userInfo?.last_name || user?.first_name + ' ' + user?.last_name || 'ผู้ใช้งาน'}
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="user-position">
                 ตำแหน่ง: {dashboardData.userInfo?.role || dashboardData.userInfo?.position || user?.position || 'พนักงาน'}
               </p>
+              <button 
+                onClick={fetchDashboardData} 
+                disabled={loading}
+                style={{
+                  marginTop: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '0.875rem',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.7 : 1
+                }}
+              >
+                {loading ? '🔄 กำลังรีเฟรช...' : '🔄 รีเฟรข'}
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow">
-            <div className="text-center">
-              <div className="text-2xl mb-2">🏠</div>
-              <div className="text-2xl font-bold text-gray-800">{dashboardData.summary.total_tables}</div>
-              <div className="text-sm text-gray-600">โต๊ะทั้งหมด</div>
+          {/* Stats Grid */}
+          <div className="stats-grid">
+            <div className="stat-card">
+              <span className="stat-icon">🏠</span>
+              <div className="stat-value">{dashboardData.summary.total_tables}</div>
+              <div className="stat-label">โต๊ะทั้งหมด</div>
             </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow">
-            <div className="text-center">
-              <div className="text-2xl mb-2">✅</div>
-              <div className="text-2xl font-bold text-green-600">{dashboardData.summary.available_tables}</div>
-              <div className="text-sm text-gray-600">โต๊ะว่าง</div>
+            
+            <div className="stat-card">
+              <span className="stat-icon">✅</span>
+              <div className="stat-value" style={{color: '#10b981'}}>{dashboardData.summary.available_tables}</div>
+              <div className="stat-label">โต๊ะว่าง</div>
             </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow">
-            <div className="text-center">
-              <div className="text-2xl mb-2">👥</div>
-              <div className="text-2xl font-bold text-red-600">{dashboardData.summary.occupied_tables}</div>
-              <div className="text-sm text-gray-600">โต๊ะมีลูกค้า</div>
+            
+            <div className="stat-card">
+              <span className="stat-icon">👥</span>
+              <div className="stat-value" style={{color: '#ef4444'}}>{dashboardData.summary.occupied_tables}</div>
+              <div className="stat-label">โต๊ะมีลูกค้า</div>
             </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow">
-            <div className="text-center">
-              <div className="text-2xl mb-2">📋</div>
-              <div className="text-2xl font-bold text-blue-600">{dashboardData.summary.today_orders}</div>
-              <div className="text-sm text-gray-600">ออเดอร์วันนี้</div>
+            
+            <div className="stat-card">
+              <span className="stat-icon">📋</span>
+              <div className="stat-value" style={{color: '#3b82f6'}}>{dashboardData.summary.today_orders}</div>
+              <div className="stat-label">ออเดอร์วันนี้</div>
             </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow">
-            <div className="text-center">
-              <div className="text-2xl mb-2">⏳</div>
-              <div className="text-2xl font-bold text-yellow-600">{dashboardData.summary.pending_orders}</div>
-              <div className="text-sm text-gray-600">ออเดอร์รอ</div>
+            
+            <div className="stat-card">
+              <span className="stat-icon">⏳</span>
+              <div className="stat-value" style={{color: '#f59e0b'}}>{dashboardData.summary.pending_orders}</div>
+              <div className="stat-label">ออเดอร์รอ</div>
             </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow">
-            <div className="text-center">
-              <div className="text-2xl mb-2">💰</div>
-              <div className="text-2xl font-bold text-purple-600">
+            
+            <div className="stat-card">
+              <span className="stat-icon">💰</span>
+              <div className="stat-value" style={{color: '#8b5cf6'}}>
                 {dashboardData.summary.today_revenue < 1000000 
                   ? `฿${dashboardData.summary.today_revenue.toLocaleString()}` 
                   : `฿${(dashboardData.summary.today_revenue / 1000).toFixed(0)}K`
                 }
               </div>
-              <div className="text-sm text-gray-600">รายได้วันนี้</div>
+              <div className="stat-label">รายได้วันนี้</div>
             </div>
           </div>
-        </div>
 
-        {/* Recent Orders */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex items-center mb-4">
-              <div className="text-2xl mr-3">📋</div>
-              <h3 className="text-lg font-semibold text-gray-800">ออเดอร์ล่าสุด</h3>
-            </div>
-            {dashboardData.todayOrders.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-3">📋</div>
-                <h4 className="text-gray-500 mb-2">ยังไม่มีออเดอร์วันนี้</h4>
-                <p className="text-sm text-gray-400">ออเดอร์จะแสดงที่นี่เมื่อมีการสั่งอาหาร</p>
+          {/* Main Content Grid */}
+          <div className="grid-2">
+            {/* Recent Orders */}
+            <div className="content-card">
+              <div className="content-card-header">
+                <span className="content-card-icon">📋</span>
+                <h3 className="content-card-title">ออเดอร์ล่าสุด</h3>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {dashboardData.todayOrders.map((order) => (
-                  <div key={order.id} className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="font-semibold text-gray-800">#{order.id} - โต๊ะ {order.table_id}</div>
-                        <div className="text-sm text-gray-600">
-                          {new Date(order.created_at).toLocaleTimeString('th-TH', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
+              {dashboardData.todayOrders.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">📋</div>
+                  <h3>ยังไม่มีออเดอร์วันนี้</h3>
+                  <p>ออเดอร์จะแสดงที่นี่เมื่อมีการสั่งอาหาร</p>
+                </div>
+              ) : (
+                <div>
+                  {dashboardData.todayOrders.map((order) => (
+                    <div key={order.id} className="order-card">
+                      <div className="order-header">
+                        <div>
+                          <div className="order-id">#{order.id} - โต๊ะ {order.table_id}</div>
+                          <div className="order-time">
+                            {new Date(order.created_at).toLocaleTimeString('th-TH', { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold text-lg text-primary">฿{order.total_amount?.toLocaleString()}</div>
-                        <div className={`text-xs px-2 py-1 rounded-full ${getOrderStatusClass(order.status)}`}>
-                          {getOrderStatusText(order.status)}
+                        <div style={{textAlign: 'right'}}>
+                          <div className="order-amount">฿{order.total_amount?.toLocaleString()}</div>
+                          <div className={`status-badge ${getOrderStatusClass(order.status)}`}>
+                            {getOrderStatusText(order.status)}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex items-center mb-4">
-              <div className="text-2xl mr-3">📊</div>
-              <h3 className="text-lg font-semibold text-gray-800">สถิติเมนู</h3>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg border">
-                <div className="text-2xl font-bold text-blue-600">{dashboardData.summary.total_menu_items}</div>
-                <div className="text-sm text-blue-700">เมนูทั้งหมด</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg border">
-                <div className="text-2xl font-bold text-green-600">{dashboardData.summary.available_menu_items}</div>
-                <div className="text-sm text-green-700">เปิดขาย</div>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg border">
-                <div className="text-2xl font-bold text-yellow-600">{dashboardData.summary.completed_orders}</div>
-                <div className="text-sm text-yellow-700">เสร็จแล้ว</div>
-              </div>
-              <div className="text-center p-4 bg-red-50 rounded-lg border">
-                <div className="text-2xl font-bold text-red-600">{dashboardData.summary.maintenance_tables}</div>
-                <div className="text-sm text-red-700">โต๊ะปิดปรับปรุง</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-          <div className="flex items-center mb-4">
-            <div className="text-2xl mr-3">⚡</div>
-            <h3 className="text-lg font-semibold text-gray-800">การดำเนินการด่วน</h3>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <button className="flex flex-col items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200">
-              <span className="text-2xl mb-2">📋</span>
-              <span className="text-sm font-medium">ดูออเดอร์</span>
-            </button>
-            <button className="flex flex-col items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors border border-green-200">
-              <span className="text-2xl mb-2">🍽️</span>
-              <span className="text-sm font-medium">จัดการเมนู</span>
-            </button>
-            <button className="flex flex-col items-center p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors border border-yellow-200">
-              <span className="text-2xl mb-2">🪑</span>
-              <span className="text-sm font-medium">จัดการโต๊ะ</span>
-            </button>
-            <button className="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors border border-purple-200">
-              <span className="text-2xl mb-2">📊</span>
-              <span className="text-sm font-medium">รายงาน</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Tables Status */}
-        {loading ? (
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="text-center py-8">
-              <div className="spinner mx-auto mb-4"></div>
-              <p className="text-gray-600">กำลังโหลดข้อมูล...</p>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-red-800">เกิดข้อผิดพลาด</h4>
-                  <p className="text-red-700">{error}</p>
+                  ))}
                 </div>
-                <button onClick={fetchDashboardData} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+              )}
+            </div>
+
+            {/* Real-time Stats & Alerts */}
+            <div className="content-card">
+              <div className="content-card-header">
+                <span className="content-card-icon">⚡</span>
+                <h3 className="content-card-title">สถิติเรียลไทม์</h3>
+              </div>
+              
+              {/* Pending Orders Alert */}
+              {dashboardData.summary.pending_orders > 0 && (
+                <div style={{
+                  background: '#fef3c7',
+                  border: '1px solid #f59e0b',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span>⚠️</span>
+                  <span style={{color: '#92400e', fontWeight: '600'}}>
+                    มีออเดอร์รอดำเนินการ {dashboardData.summary.pending_orders} รายการ
+                  </span>
+                </div>
+              )}
+
+              {/* Occupied Tables Alert */}
+              {dashboardData.summary.occupied_tables === dashboardData.summary.total_tables && dashboardData.summary.total_tables > 0 && (
+                <div style={{
+                  background: '#fee2e2',
+                  border: '1px solid #ef4444',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span>🚫</span>
+                  <span style={{color: '#991b1b', fontWeight: '600'}}>
+                    โต๊ะเต็มทั้งหมด! ไม่มีโต๊ะว่าง
+                  </span>
+                </div>
+              )}
+
+              <div className="grid-2" style={{gap: '1rem'}}>
+                <div style={{textAlign: 'center', padding: '1rem', background: '#eff6ff', borderRadius: '8px', border: '1px solid #dbeafe'}}>
+                  <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#3b82f6'}}>{dashboardData.summary.total_menu_items}</div>
+                  <div style={{fontSize: '0.875rem', color: '#1e40af'}}>เมนูทั้งหมด</div>
+                </div>
+                <div style={{textAlign: 'center', padding: '1rem', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0'}}>
+                  <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981'}}>{dashboardData.summary.available_menu_items}</div>
+                  <div style={{fontSize: '0.875rem', color: '#065f46'}}>เปิดขาย</div>
+                </div>
+                <div style={{textAlign: 'center', padding: '1rem', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fef3c7'}}>
+                  <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b'}}>{dashboardData.summary.completed_orders}</div>
+                  <div style={{fontSize: '0.875rem', color: '#92400e'}}>เสร็จแล้ว</div>
+                </div>
+                <div style={{textAlign: 'center', padding: '1rem', background: '#fef2f2', borderRadius: '8px', border: '1px solid #fecaca'}}>
+                  <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444'}}>{dashboardData.summary.maintenance_tables}</div>
+                  <div style={{fontSize: '0.875rem', color: '#991b1b'}}>โต๊ะปิดปรับปรุง</div>
+                </div>
+              </div>
+
+              {/* Peak Hours Indicator */}
+              <div style={{
+                marginTop: '1rem',
+                padding: '0.75rem',
+                background: '#f8fafc',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                fontSize: '0.875rem',
+                color: '#64748b'
+              }}>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                  <span>📈 สถิติวันนี้</span>
+                  <span>อัตราการใช้โต๊ะ: {dashboardData.summary.total_tables > 0 ? Math.round((dashboardData.summary.occupied_tables / dashboardData.summary.total_tables) * 100) : 0}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="content-card">
+            <div className="content-card-header">
+              <span className="content-card-icon">⚡</span>
+              <h3 className="content-card-title">การดำเนินการด่วน</h3>
+            </div>
+            <div className="quick-actions-grid">
+              <a href="/admin/orders" className="quick-action-btn">
+                <span className="quick-action-icon">📋</span>
+                <span className="quick-action-label">ดูออเดอร์</span>
+              </a>
+              <a href="/admin/menu" className="quick-action-btn">
+                <span className="quick-action-icon">🍽️</span>
+                <span className="quick-action-label">จัดการเมนู</span>
+              </a>
+              <a href="/admin/tables" className="quick-action-btn">
+                <span className="quick-action-icon">🪑</span>
+                <span className="quick-action-label">จัดการโต๊ะ</span>
+              </a>
+              <a href="/admin/reports" className="quick-action-btn">
+                <span className="quick-action-icon">📊</span>
+                <span className="quick-action-label">รายงาน</span>
+              </a>
+              <a href="/admin/staff" className="quick-action-btn">
+                <span className="quick-action-icon">👥</span>
+                <span className="quick-action-label">จัดการพนักงาน</span>
+              </a>
+              <a href="/admin/qr" className="quick-action-btn">
+                <span className="quick-action-icon">�</span>
+                <span className="quick-action-label">QR Code</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Tables Status */}
+          {loading ? (
+            <div className="content-card">
+              <div className="loading-card">
+                <div className="loading-spinner"></div>
+                <p style={{marginTop: '1rem'}}>กำลังโหลดข้อมูล...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="content-card">
+              <div className="error-card">
+                <div className="error-content">
+                  <h4>เกิดข้อผิดพลาด</h4>
+                  <p>{error}</p>
+                </div>
+                <button onClick={fetchDashboardData} className="error-btn">
                   ลองใหม่
                 </button>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex items-center mb-4">
-              <div className="text-2xl mr-3">🪑</div>
-              <h3 className="text-lg font-semibold text-gray-800">สถานะโต๊ะทั้งหมด</h3>
-            </div>
-            {dashboardData.tables.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-3">🪑</div>
-                <h3 className="text-gray-500 mb-2">ไม่มีข้อมูลโต๊ะ</h3>
-                <p className="text-sm text-gray-400">กรุณาเพิ่มโต๊ะในระบบก่อนใช้งาน</p>
+          ) : (
+            <div className="content-card">
+              <div className="content-card-header">
+                <span className="content-card-icon">🪑</span>
+                <h3 className="content-card-title">สถานะโต๊ะทั้งหมด</h3>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {dashboardData.tables.map((table) => (
-                  <div key={table.id} className={`border rounded-lg p-4 hover:shadow-md transition-all ${getTableStatusClass(table.status)}`}>
-                    <div className="flex justify-between items-start mb-3">
-                      <h4 className="font-semibold text-gray-800">โต๊ะ {table.table_number}</h4>
-                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeClass(table.status)}`}>
-                        {renderTableStatus(table.status)}
-                      </span>
-                    </div>
-                    
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span>🎯</span>
-                        <span className="text-gray-700">QR: {table.qr_code_identifier}</span>
+              {dashboardData.tables.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">🪑</div>
+                  <h3>ไม่มีข้อมูลโต๊ะ</h3>
+                  <p>กรุณาเพิ่มโต๊ะในระบบก่อนใช้งาน</p>
+                </div>
+              ) : (
+                <div className="tables-grid">
+                  {dashboardData.tables.map((table) => (
+                    <div key={table.id} className={`table-card ${table.status}`}>
+                      <div className="table-header">
+                        <h4 className="table-number">โต๊ะ {table.table_number}</h4>
+                        <span className={`status-badge status-${table.status}`}>
+                          {renderTableStatus(table.status)}
+                        </span>
                       </div>
                       
-                      {table.capacity && (
-                        <div className="flex items-center gap-2">
-                          <span>👥</span>
-                          <span className="text-gray-700">{table.capacity} ที่นั่ง</span>
+                      <div className="table-info">
+                        <div className="table-info-item">
+                          <span>🎯</span>
+                          <span>QR: {table.qr_code_identifier || table.id}</span>
                         </div>
-                      )}
-                      
-                      {table.current_orders && table.current_orders > 0 && (
-                        <div className="flex items-center gap-2">
-                          <span>📋</span>
-                          <span className="text-gray-700">{table.current_orders} ออเดอร์</span>
-                        </div>
-                      )}
-                      
-                      {table.total_amount && table.total_amount > 0 && (
-                        <div className="flex items-center gap-2">
-                          <span>💰</span>
-                          <span className="text-gray-700">฿{table.total_amount.toLocaleString()}</span>
-                        </div>
-                      )}
+                        
+                        {table.capacity && (
+                          <div className="table-info-item">
+                            <span>👥</span>
+                            <span>{table.capacity} ที่นั่ง</span>
+                          </div>
+                        )}
+                        
+                        {table.current_orders && table.current_orders > 0 && (
+                          <div className="table-info-item">
+                            <span>📋</span>
+                            <span>{table.current_orders} ออเดอร์</span>
+                          </div>
+                        )}
+                        
+                        {table.total_amount && table.total_amount > 0 && (
+                          <div className="table-info-item">
+                            <span>💰</span>
+                            <span>฿{table.total_amount.toLocaleString()}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </MainLayout>
   );
@@ -470,14 +565,14 @@ function DashboardPage() {
 
 function getOrderStatusClass(status) {
   const statusClasses = {
-    'pending': 'bg-yellow-100 text-yellow-800',
-    'preparing': 'bg-blue-100 text-blue-800',
-    'ready': 'bg-green-100 text-green-800',
-    'served': 'bg-green-100 text-green-800',
-    'completed': 'bg-green-100 text-green-800',
-    'cancelled': 'bg-red-100 text-red-800'
+    'pending': 'status-pending',
+    'preparing': 'status-preparing',
+    'ready': 'status-ready',
+    'served': 'status-completed',
+    'completed': 'status-completed',
+    'cancelled': 'status-cancelled'
   };
-  return statusClasses[status] || 'bg-gray-100 text-gray-800';
+  return statusClasses[status] || 'status-pending';
 }
 
 function getOrderStatusText(status) {
@@ -502,26 +597,6 @@ function renderTableStatus(status) {
   
   const config = statusConfig[status] || statusConfig['available'];
   return `${config.icon} ${config.text}`;
-}
-
-function getTableStatusClass(status) {
-  const statusClasses = {
-    'available': 'border-l-4 border-green-400 bg-green-50',
-    'occupied': 'border-l-4 border-red-400 bg-red-50',
-    'reserved': 'border-l-4 border-yellow-400 bg-yellow-50',
-    'maintenance': 'border-l-4 border-gray-400 bg-gray-50'
-  };
-  return statusClasses[status] || statusClasses['available'];
-}
-
-function getStatusBadgeClass(status) {
-  const badgeClasses = {
-    'available': 'bg-green-100 text-green-800',
-    'occupied': 'bg-red-100 text-red-800',
-    'reserved': 'bg-yellow-100 text-yellow-800',
-    'maintenance': 'bg-gray-100 text-gray-800'
-  };
-  return badgeClasses[status] || badgeClasses['available'];
 }
 
 export default DashboardPage;
