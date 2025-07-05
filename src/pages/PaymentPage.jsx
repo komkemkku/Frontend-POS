@@ -17,10 +17,42 @@ function PaymentPage() {
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastPayment, setLastPayment] = useState(null);
 
+  // เพิ่มตัวแปรสำหรับแสดงสถานะการเชื่อมต่อ API
+  const [apiStatus, setApiStatus] = useState({
+    connected: false,
+    lastChecked: null,
+    error: null
+  });
+
   useEffect(() => {
     fetchOrdersForPayment();
     const interval = setInterval(fetchOrdersForPayment, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // ฟังก์ชันตรวจสอบการเชื่อมต่อ API
+  const checkApiConnection = async () => {
+    try {
+      await adminApi.health.check();
+      setApiStatus({
+        connected: true,
+        lastChecked: new Date(),
+        error: null
+      });
+    } catch (err) {
+      setApiStatus({
+        connected: false,
+        lastChecked: new Date(),
+        error: err.message
+      });
+    }
+  };
+
+  // ตรวจสอบการเชื่อมต่อเมื่อ component โหลด
+  useEffect(() => {
+    checkApiConnection();
+    const healthCheckInterval = setInterval(checkApiConnection, 60000); // ตรวจสอบทุก 1 นาที
+    return () => clearInterval(healthCheckInterval);
   }, []);
 
   const fetchOrdersForPayment = async () => {
@@ -28,17 +60,23 @@ function PaymentPage() {
       setLoading(true);
       setError(null);
       
+      console.log('Fetching orders from API...');
       const data = await adminApi.orders.getList();
+      console.log('Raw orders data:', data);
+      
       // กรองแค่ออเดอร์ที่เสิร์ฟแล้วเท่านั้น (ไม่รวม completed เพราะชำระแล้ว)
       let payableOrders = (Array.isArray(data) ? data : []).filter(order => 
         order.status === 'served'
       );
       
+      console.log('Filtered served orders:', payableOrders);
+      
       // Map field names to ensure consistency
       payableOrders = payableOrders.map(order => ({
         ...order,
+        id: order.id,
         table_number: order.table_number || order.tableNumber || order.table_id,
-        total_amount: order.total_amount || order.totalAmount,
+        total_amount: parseFloat(order.total_amount || order.totalAmount || 0),
         created_at: typeof order.created_at === 'number' 
           ? new Date(order.created_at * 1000).toISOString() 
           : order.created_at,
@@ -46,49 +84,40 @@ function PaymentPage() {
         order_items: order.order_items || order.orderItems || order.items || []
       }));
       
-      // Add fallback data if empty for testing
-      if (payableOrders.length === 0) {
+      console.log('Mapped orders:', payableOrders);
+      
+      // Add fallback data ONLY if completely empty and in development
+      if (payableOrders.length === 0 && process.env.NODE_ENV === 'development') {
+        console.log('No served orders found, adding fallback data for development');
         const now = Math.floor(Date.now() / 1000);
         const oneHourAgo = now - (1 * 60 * 60);
         const thirtyMinutesAgo = now - (30 * 60);
         
         payableOrders = [
           {
-            id: 4,
+            id: 999,
             table_id: 5,
             table_number: 5,
             status: 'served',
             total_amount: 580,
-            created_at: oneHourAgo,
-            customer_name: 'คุณสมพร',
+            created_at: new Date(oneHourAgo * 1000).toISOString(),
+            customer_name: 'คุณสมพร (Demo)',
             order_items: [
               { menu_name: 'ผัดกะเพรา', quantity: 1, price: 120, unit_price: 120 },
               { menu_name: 'แกงเขียวหวาน', quantity: 1, price: 160, unit_price: 160 },
               { menu_name: 'ข้าวเปล่า', quantity: 3, price: 100, unit_price: 33 },
               { menu_name: 'น้ำใส', quantity: 2, price: 200, unit_price: 100 }
             ]
-          },
-          {
-            id: 5,
-            table_id: 6,
-            table_number: 6,
-            status: 'served', // เปลี่ยนจาก ready เป็น served
-            total_amount: 420,
-            created_at: thirtyMinutesAgo,
-            customer_name: 'คุณสมใจ',
-            order_items: [
-              { menu_name: 'ลาบหมู', quantity: 1, price: 140, unit_price: 140 },
-              { menu_name: 'ส้มตำไทย', quantity: 2, price: 140, unit_price: 70 },
-              { menu_name: 'ข้าวเหนียว', quantity: 2, price: 140, unit_price: 70 }
-            ]
           }
         ];
       }
       
       setOrders(payableOrders);
+      console.log('Final orders set:', payableOrders);
+      
     } catch (err) {
       console.error('Orders fetch error:', err);
-      setError(`ไม่สามารถโหลดออเดอร์ได้: ${err.message}`);
+      setError(`ไม่สามารถโหลดออเดอร์ได้: ${err.response?.data?.message || err.message}`);
       setOrders([]);
     } finally {
       setLoading(false);
@@ -107,14 +136,18 @@ function PaymentPage() {
     }
 
     try {
+      console.log('Fetching order details for ID:', orderId);
+      
       // Try to get order details from API first
       const orderData = await adminApi.orders.getById(orderId);
+      console.log('Order details from API:', orderData);
       
       // Map field names for consistency
       const mappedOrderData = {
         ...orderData,
+        id: orderData.id,
         table_number: orderData.table_number || orderData.tableNumber || orderData.table_id,
-        total_amount: orderData.total_amount || orderData.totalAmount,
+        total_amount: parseFloat(orderData.total_amount || orderData.totalAmount || 0),
         created_at: typeof orderData.created_at === 'number' 
           ? new Date(orderData.created_at * 1000).toISOString() 
           : orderData.created_at,
@@ -122,25 +155,30 @@ function PaymentPage() {
         order_items: (orderData.order_items || orderData.orderItems || orderData.items || []).map(item => ({
           ...item,
           menu_name: item.menu_name || item.menuName || item.name,
-          quantity: item.quantity,
-          price: item.price || item.unitPrice,
-          unit_price: item.unit_price || item.unitPrice || item.price
+          quantity: parseInt(item.quantity || 1),
+          price: parseFloat(item.price || item.unitPrice || 0),
+          unit_price: parseFloat(item.unit_price || item.unitPrice || item.price || 0)
         }))
       };
+      
+      console.log('Mapped order data:', mappedOrderData);
       
       setOrderDetails(mappedOrderData);
       setReceivedAmount(mappedOrderData.total_amount?.toString() || '');
       setDiscount(0);
+      
     } catch (err) {
       console.error('Order details fetch error:', err);
-      // If API fails, use data from orders list
+      
+      // If API fails, use data from orders list as fallback
       const fallbackOrder = orders.find(order => order.id === parseInt(orderId));
       if (fallbackOrder) {
+        console.log('Using fallback order:', fallbackOrder);
         setOrderDetails(fallbackOrder);
         setReceivedAmount(fallbackOrder.total_amount?.toString() || '');
         setDiscount(0);
       } else {
-        setError(`ไม่สามารถโหลดรายละเอียดออเดอร์ได้: ${err.message}`);
+        setError(`ไม่สามารถโหลดรายละเอียดออเดอร์ได้: ${err.response?.data?.message || err.message}`);
         setOrderDetails(null);
       }
     }
@@ -162,25 +200,27 @@ function PaymentPage() {
         return;
       }
 
+      // สร้าง payment data ตาม API format ของ Backend
       const paymentData = {
         order_id: orderDetails.id,
-        amount_paid: totalAfterDiscount, // ใช้ amount_paid แทน amount
+        amount_paid: totalAfterDiscount,
         payment_method: paymentMethod,
         transaction_time: new Date().toISOString()
       };
       
-      // Create payment record
-      const paymentResult = await adminApi.payments.create(paymentData);
+      console.log('Creating payment with data:', paymentData);
       
-      // Update order status to completed
+      // Create payment record ผ่าน API จริง
+      const paymentResult = await adminApi.payments.create(paymentData);
+      console.log('Payment result:', paymentResult);
+      
+      // Update order status to completed ผ่าน API จริง
       await adminApi.orders.update(orderDetails.id, { status: 'completed' });
+      console.log('Order status updated to completed');
       
       // Store payment info for receipt
       setLastPayment({
-        order_id: orderDetails.id,
-        amount: totalAfterDiscount,
-        amount_paid: totalAfterDiscount,
-        payment_method: paymentMethod,
+        ...paymentData,
         received_amount: received,
         change_amount: paymentMethod === 'cash' ? Math.max(0, received - totalAfterDiscount) : 0,
         discount: discount,
@@ -196,11 +236,12 @@ function PaymentPage() {
       setReceivedAmount('');
       setDiscount(0);
       
-      fetchOrdersForPayment();
+      // Refresh orders list
+      await fetchOrdersForPayment();
       
     } catch (err) {
       console.error('Payment error:', err);
-      setError(`การชำระเงินไม่สำเร็จ: ${err.message}`);
+      setError(`การชำระเงินไม่สำเร็จ: ${err.response?.data?.message || err.message}`);
     } finally {
       setPaying(false);
     }
@@ -328,12 +369,21 @@ function PaymentPage() {
                 <p className="header-subtitle">จัดการการชำระเงินและพิมพ์ใบเสร็จ</p>
               </div>
             </div>
-            <button onClick={fetchOrdersForPayment} className="refresh-btn" disabled={loading}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 4V9H4.58L6.15 6.5C7.8 4.3 10.8 3.7 13.5 5.2C16.2 6.7 17.2 10.1 15.7 12.8C14.2 15.5 10.8 16.5 8.1 15C7.4 14.6 6.8 14 6.4 13.3L4.8 14.8C5.4 15.8 6.2 16.7 7.2 17.2C10.9 19.3 15.5 18 17.6 14.3C19.7 10.6 18.4 6 14.7 3.9C11 1.8 6.4 3.1 4.3 6.8L2.8 9H7V11H2V6H4V4Z" fill="currentColor"/>
-              </svg>
-              รีเฟรช
-            </button>
+            <div className="header-actions">
+              {/* API Status Indicator */}
+              <div className={`api-status ${apiStatus.connected ? 'connected' : 'disconnected'}`}>
+                <span className="status-dot"></span>
+                <span className="status-text">
+                  {apiStatus.connected ? 'API เชื่อมต่อ' : 'API ขาดการเชื่อมต่อ'}
+                </span>
+              </div>
+              <button onClick={fetchOrdersForPayment} className="refresh-btn" disabled={loading}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 4V9H4.58L6.15 6.5C7.8 4.3 10.8 3.7 13.5 5.2C16.2 6.7 17.2 10.1 15.7 12.8C14.2 15.5 10.8 16.5 8.1 15C7.4 14.6 6.8 14 6.4 13.3L4.8 14.8C5.4 15.8 6.2 16.7 7.2 17.2C10.9 19.3 15.5 18 17.6 14.3C19.7 10.6 18.4 6 14.7 3.9C11 1.8 6.4 3.1 4.3 6.8L2.8 9H7V11H2V6H4V4Z" fill="currentColor"/>
+                </svg>
+                รีเฟรช
+              </button>
+            </div>
           </div>
         </div>
 
