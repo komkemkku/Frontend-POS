@@ -64,12 +64,30 @@ function PaymentPage() {
       const data = await adminApi.orders.getList();
       console.log('Raw orders data:', data);
       
+      // แสดงออเดอร์ทั้งหมดเพื่อดูข้อมูลจาก API จริง (สำหรับ debug)
+      console.log('All orders from API:', data);
+      
       // กรองแค่ออเดอร์ที่เสร็จสิ้นแล้ว (completed) และยังไม่ได้ชำระเงิน
       let payableOrders = (Array.isArray(data) ? data : []).filter(order => 
         order.status === 'completed' // เฉพาะออเดอร์ที่เสร็จสิ้นแล้วเท่านั้น
       );
       
       console.log('Filtered completed orders:', payableOrders);
+      
+      // หากไม่มี completed orders ให้แสดงออเดอร์อื่นๆ เพื่อดูข้อมูล (เฉพาะใน development)
+      if (payableOrders.length === 0 && process.env.NODE_ENV === 'development') {
+        console.log('No completed orders, showing all orders for debugging...');
+        payableOrders = (Array.isArray(data) ? data : []).filter(order => 
+          order.status && order.status !== 'cancelled' && order.status !== 'paid'
+        );
+        console.log('All non-cancelled/non-paid orders:', payableOrders);
+        
+        // เพิ่มการแสดงคำแนะนำ
+        if (payableOrders.length > 0) {
+          console.log('🔧 Development Mode: แสดงออเดอร์ทั้งหมดที่ไม่ใช่ cancelled/paid');
+          console.log('💡 คลิกออเดอร์เพื่อดูรายละเอียด จากนั้นสามารถเปลี่ยนสถานะเป็น completed ได้');
+        }
+      }
       
       // Map field names to ensure consistency
       payableOrders = payableOrders.map(order => ({
@@ -85,32 +103,6 @@ function PaymentPage() {
       }));
       
       console.log('Mapped orders:', payableOrders);
-      
-      // Add fallback data ONLY if completely empty and in development
-      if (payableOrders.length === 0 && process.env.NODE_ENV === 'development') {
-        console.log('No completed orders found, adding fallback data for development');
-        const now = Math.floor(Date.now() / 1000);
-        const oneHourAgo = now - (1 * 60 * 60);
-        const thirtyMinutesAgo = now - (30 * 60);
-        
-        payableOrders = [
-          {
-            id: 999,
-            table_id: 5,
-            table_number: 5,
-            status: 'completed',
-            total_amount: 580,
-            created_at: new Date(oneHourAgo * 1000).toISOString(),
-            customer_name: 'คุณสมพร (Demo)',
-            order_items: [
-              { menu_name: 'ผัดกะเพรา', quantity: 1, price: 120, unit_price: 120 },
-              { menu_name: 'แกงเขียวหวาน', quantity: 1, price: 160, unit_price: 160 },
-              { menu_name: 'ข้าวเปล่า', quantity: 3, price: 100, unit_price: 33 },
-              { menu_name: 'น้ำใส', quantity: 2, price: 200, unit_price: 100 }
-            ]
-          }
-        ];
-      }
       
       setOrders(payableOrders);
       console.log('Final orders set:', payableOrders);
@@ -162,6 +154,7 @@ function PaymentPage() {
       };
       
       console.log('Mapped order data:', mappedOrderData);
+      console.log('Order items:', mappedOrderData.order_items);
       
       setOrderDetails(mappedOrderData);
       setReceivedAmount(mappedOrderData.total_amount?.toString() || '');
@@ -282,20 +275,55 @@ function PaymentPage() {
   };
 
   const getRelativeTime = (dateString) => {
-    const now = new Date();
-    const orderTime = typeof dateString === 'number' ? new Date(dateString * 1000) : new Date(dateString);
-    const diffInMinutes = Math.floor((now - orderTime) / (1000 * 60));
+    if (!dateString) return 'ไม่ระบุเวลา';
     
-    if (diffInMinutes < 1) {
-      return 'เพิ่งสั่ง';
-    } else if (diffInMinutes < 60) {
-      return `${diffInMinutes} นาทีที่แล้ว`;
-    } else if (diffInMinutes < 1440) {
-      const hours = Math.floor(diffInMinutes / 60);
-      return `${hours} ชั่วโมงที่แล้ว`;
-    } else {
-      const days = Math.floor(diffInMinutes / 1440);
-      return `${days} วันที่แล้ว`;
+    const now = new Date();
+    let orderTime;
+    
+    try {
+      // Handle different timestamp formats
+      if (typeof dateString === 'number') {
+        // Unix timestamp (seconds)
+        orderTime = dateString > 1000000000000 ? new Date(dateString) : new Date(dateString * 1000);
+      } else if (typeof dateString === 'string') {
+        // ISO string or Unix timestamp string
+        if (dateString.includes('T') || dateString.includes('-')) {
+          orderTime = new Date(dateString);
+        } else {
+          // String number (Unix timestamp)
+          const timestamp = parseInt(dateString);
+          orderTime = timestamp > 1000000000000 ? new Date(timestamp) : new Date(timestamp * 1000);
+        }
+      } else {
+        orderTime = new Date(dateString);
+      }
+      
+      // Validate date
+      if (isNaN(orderTime.getTime())) {
+        return 'เวลาไม่ถูกต้อง';
+      }
+      
+      const diffInMinutes = Math.floor((now - orderTime) / (1000 * 60));
+      
+      // Handle negative time (future dates)
+      if (diffInMinutes < 0) {
+        return 'เพิ่งสั่ง';
+      }
+      
+      if (diffInMinutes < 1) {
+        return 'เพิ่งสั่ง';
+      } else if (diffInMinutes < 60) {
+        return `${diffInMinutes} นาทีที่แล้ว`;
+      } else if (diffInMinutes < 1440) {
+        const hours = Math.floor(diffInMinutes / 60);
+        return `${hours} ชั่วโมงที่แล้ว`;
+      } else {
+        const days = Math.floor(diffInMinutes / 1440);
+        return `${days} วันที่แล้ว`;
+      }
+    } catch (error) {
+      console.error('Error parsing date:', dateString, error);
+      return 'เวลาไม่ถูกต้อง';
     }
   };
 
@@ -435,8 +463,13 @@ function PaymentPage() {
               ) : orders.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-icon">💳</div>
-                  <h3 className="empty-title">ไม่มีออเดอร์ที่ต้องชำระเงิน</h3>
-                  <p className="empty-message">ออเดอร์ที่พร้อมชำระเงินจะแสดงที่นี่</p>
+                  <h3 className="empty-title">ไม่มีออเดอร์ที่พร้อมชำระเงิน</h3>
+                  <p className="empty-message">ออเดอร์ต้องมีสถานะ "เสร็จสิ้น" (completed) เท่านั้น</p>
+                  {process.env.NODE_ENV === 'development' && (
+                    <p className="empty-message" style={{color: '#007bff', fontSize: '14px'}}>
+                      🔧 โหมด Development: ดูข้อมูลใน Console หรือเปลี่ยนสถานะออเดอร์ได้
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="orders-list">
@@ -543,15 +576,25 @@ function PaymentPage() {
                   <div className="order-items">
                     <h5 className="items-title">รายการอาหาร</h5>
                     <div className="items-list">
-                      {(orderDetails.order_items || []).map((item, idx) => (
-                        <div key={idx} className="item-row">
-                          <div className="item-details">
-                            <span className="item-name">{item.menu_name}</span>
-                            <span className="item-quantity">x{item.quantity}</span>
-                          </div>
-                          <span className="item-price">฿{item.price?.toLocaleString()}</span>
+                      {(!orderDetails.order_items || orderDetails.order_items.length === 0) ? (
+                        <div className="no-items">
+                          <p>ไม่พบรายการอาหาร</p>
                         </div>
-                      ))}
+                      ) : (
+                        orderDetails.order_items.map((item, idx) => (
+                          <div key={idx} className="item-row">
+                            <div className="item-details">
+                              <span className="item-name">
+                                {item.menu_name || item.name || 'ไม่ระบุชื่อ'}
+                              </span>
+                              <span className="item-quantity">x{item.quantity || 1}</span>
+                            </div>
+                            <span className="item-price">
+                              ฿{(item.price || item.unit_price || 0)?.toLocaleString()}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
                     <div className="items-total">
                       <span className="total-label">ยอดรวม:</span>
@@ -652,15 +695,53 @@ function PaymentPage() {
                 </div>
 
                 {/* Payment Button */}
+                {process.env.NODE_ENV === 'development' && orderDetails && orderDetails.status !== 'completed' && (
+                  <div className="dev-tools">
+                    <h5 style={{color: '#666', fontSize: '14px', marginBottom: '8px'}}>🔧 Development Tools</h5>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await adminApi.orders.update(orderDetails.id, { status: 'completed' });
+                          alert('✅ เปลี่ยนสถานะเป็น completed แล้ว');
+                          await fetchOrdersForPayment();
+                          setSelectedOrder('');
+                          setOrderDetails(null);
+                        } catch (err) {
+                          alert('❌ ไม่สามารถเปลี่ยนสถานะได้: ' + err.message);
+                        }
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: '#f0f8ff',
+                        border: '1px solid #007bff',
+                        borderRadius: '4px',
+                        color: '#007bff',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        marginBottom: '16px'
+                      }}
+                    >
+                      เปลี่ยนสถานะเป็น "completed"
+                    </button>
+                  </div>
+                )}
+                
                 <button
                   onClick={handlePayment}
-                  disabled={paying || (paymentMethod === 'cash' && parseFloat(receivedAmount) < totalAfterDiscount)}
+                  disabled={paying || (paymentMethod === 'cash' && parseFloat(receivedAmount) < totalAfterDiscount) || (orderDetails && orderDetails.status !== 'completed')}
                   className="payment-btn"
                 >
                   {paying ? (
                     <>
                       <div className="btn-spinner"></div>
                       กำลังดำเนินการ...
+                    </>
+                  ) : orderDetails && orderDetails.status !== 'completed' ? (
+                    <>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/>
+                      </svg>
+                      ออเดอร์ต้องเป็นสถานะ "เสร็จสิ้น" เท่านั้น
                     </>
                   ) : (
                     <>

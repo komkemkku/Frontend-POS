@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API - Create Completed Order</title>
+</head>
+<body>
+    <h1>Create Test Order</h1>
+    <button onclick="createTestOrder()">สร้างออเดอร์ทดสอบ</button>
+    <button onclick="getOrders()">ดูข้อมูลออเดอร์ทั้งหมด</button>
+    <button onclick="updateOrderStatus()">เปลี่ยนสถานะเป็น completed</button>
+    <div id="output"></div>
+    
+    <script>
+        const API_BASE = 'https://backend-pos-production.up.railway.app';
+        
+        async function getOrders() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<p>กำลังดึงข้อมูลออเดอร์...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/orders`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const text = await response.text();
+                console.log('Response:', text);
+                
+                output.innerHTML = `
+                    <h2>Orders API Response (Status: ${response.status}):</h2>
+                    <pre>${text}</pre>
+                `;
+                
+                try {
+                    const data = JSON.parse(text);
+                    output.innerHTML += `
+                        <h2>Parsed JSON:</h2>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } catch(e) {
+                    output.innerHTML += '<p>Response is not valid JSON</p>';
+                }
+                
+            } catch (error) {
+                output.innerHTML = `<h2>Error:</h2><pre>${error.message}</pre>`;
+            }
+        }
+        
+        async function createTestOrder() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<p>กำลังสร้างออเดอร์ทดสอบ...</p>';
+            
+            try {
+                // Create order
+                const orderData = {
+                    table_id: 1,
+                    status: 'completed',
+                    total_amount: 250.00,
+                    order_items: [
+                        {
+                            menu_item_id: 1,
+                            quantity: 2,
+                            price_per_item: 60.00,
+                            notes: 'ไม่เผ็ด'
+                        },
+                        {
+                            menu_item_id: 3,
+                            quantity: 1,
+                            price_per_item: 150.00,
+                            notes: 'เผ็ดปานกลาง'
+                        }
+                    ]
+                };
+                
+                const response = await fetch(`${API_BASE}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(orderData)
+                });
+                
+                const text = await response.text();
+                console.log('Create Order Response:', text);
+                
+                output.innerHTML = `
+                    <h2>Create Order Response (Status: ${response.status}):</h2>
+                    <pre>${text}</pre>
+                `;
+                
+            } catch (error) {
+                output.innerHTML = `<h2>Error:</h2><pre>${error.message}</pre>`;
+            }
+        }
+        
+        async function updateOrderStatus() {
+            const output = document.getElementById('output');
+            const orderId = prompt('ใส่ Order ID ที่ต้องการเปลี่ยนสถานะ:');
+            if (!orderId) return;
+            
+            output.innerHTML = '<p>กำลังเปลี่ยนสถานะออเดอร์...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/orders/${orderId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: 'completed'
+                    })
+                });
+                
+                const text = await response.text();
+                console.log('Update Order Response:', text);
+                
+                output.innerHTML = `
+                    <h2>Update Order Response (Status: ${response.status}):</h2>
+                    <pre>${text}</pre>
+                `;
+                
+            } catch (error) {
+                output.innerHTML = `<h2>Error:</h2><pre>${error.message}</pre>`;
+            }
+        }
+        
+        // Auto load orders when page loads
+        setTimeout(getOrders, 1000);
+    </script>
+</body>
+</html>

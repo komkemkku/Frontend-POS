@@ -243,6 +243,17 @@ function DashboardPage() {
     }
   };
 
+  const getTableStatusText = (status) => {
+    const statusTexts = {
+      'available': 'ว่าง',
+      'occupied': 'มีลูกค้า',
+      'reserved': 'จองแล้ว',
+      'maintenance': 'ปรับปรุง',
+      'cleaning': 'ทำความสะอาด'
+    };
+    return statusTexts[status] || status;
+  };
+
   return (
     <MainLayout>
       <div className="dashboard-container">
@@ -300,8 +311,16 @@ function DashboardPage() {
               <div className="stat-label">โต๊ะมีลูกค้า</div>
             </div>
             
+            {dashboardData.summary.reserved_tables > 0 && (
+              <div className="stat-card">
+                <span className="stat-icon">�</span>
+                <div className="stat-value" style={{color: '#3b82f6'}}>{dashboardData.summary.reserved_tables}</div>
+                <div className="stat-label">โต๊ะจอง</div>
+              </div>
+            )}
+            
             <div className="stat-card">
-              <span className="stat-icon">📋</span>
+              <span className="stat-icon">�📋</span>
               <div className="stat-value" style={{color: '#3b82f6'}}>{dashboardData.summary.today_orders}</div>
               <div className="stat-label">ออเดอร์วันนี้</div>
             </div>
@@ -323,6 +342,77 @@ function DashboardPage() {
               <div className="stat-label">รายได้วันนี้</div>
             </div>
           </div>
+
+          {/* Table Status Overview */}
+          <div className="content-card table-overview">
+            <div className="content-card-header">
+              <span className="content-card-icon">🍽️</span>
+              <h3 className="content-card-title">สถานะโต๊ะ</h3>
+              <div className="table-utilization">
+                <span>อัตราการใช้งาน: </span>
+                <span style={{color: dashboardData.summary.occupied_tables / dashboardData.summary.total_tables > 0.8 ? '#ef4444' : '#10b981', fontWeight: 'bold'}}>
+                  {dashboardData.summary.total_tables > 0 ? Math.round((dashboardData.summary.occupied_tables / dashboardData.summary.total_tables) * 100) : 0}%
+                </span>
+              </div>
+            </div>
+            <div className="table-stats-detailed">
+              <div className="table-stat-item">
+                <div className="table-stat-bar">
+                  <div className="bar-segment available" style={{width: `${dashboardData.summary.total_tables > 0 ? (dashboardData.summary.available_tables / dashboardData.summary.total_tables) * 100 : 0}%`}}></div>
+                  <div className="bar-segment occupied" style={{width: `${dashboardData.summary.total_tables > 0 ? (dashboardData.summary.occupied_tables / dashboardData.summary.total_tables) * 100 : 0}%`}}></div>
+                  <div className="bar-segment reserved" style={{width: `${dashboardData.summary.total_tables > 0 ? (dashboardData.summary.reserved_tables / dashboardData.summary.total_tables) * 100 : 0}%`}}></div>
+                </div>
+              </div>
+              <div className="table-legend">
+                <div className="legend-item">
+                  <span className="legend-dot available"></span>
+                  <span>ว่าง ({dashboardData.summary.available_tables} โต๊ะ)</span>
+                </div>
+                <div className="legend-item">
+                  <span className="legend-dot occupied"></span>
+                  <span>มีลูกค้า ({dashboardData.summary.occupied_tables} โต๊ะ)</span>
+                </div>
+                {dashboardData.summary.reserved_tables > 0 && (
+                  <div className="legend-item">
+                    <span className="legend-dot reserved"></span>
+                    <span>จองแล้ว ({dashboardData.summary.reserved_tables} โต๊ะ)</span>
+                  </div>
+                )}
+                {dashboardData.summary.maintenance_tables > 0 && (
+                  <div className="legend-item">
+                    <span className="legend-dot maintenance"></span>
+                    <span>ปิดปรับปรุง ({dashboardData.summary.maintenance_tables} โต๊ะ)</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Tables Overview Grid */}
+          {dashboardData.tables.length > 0 && (
+            <div className="content-card">
+              <div className="content-card-header">
+                <span className="content-card-icon">🏠</span>
+                <h3 className="content-card-title">โต๊ะทั้งหมด ({dashboardData.tables.length} โต๊ะ)</h3>
+              </div>
+              <div className="table-cards-grid">
+                {dashboardData.tables.map((table) => (
+                  <div 
+                    key={table.id} 
+                    className={`table-mini-card ${table.status}`}
+                    title={`โต๊ะ ${table.table_number || table.id} - สถานะ: ${getTableStatusText(table.status)}`}
+                  >
+                    <div className="table-number">
+                      {table.table_number || table.id}
+                    </div>
+                    <div className={`table-status ${table.status}`}>
+                      {getTableStatusText(table.status)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Main Content Grid */}
           <div className="grid-2">
