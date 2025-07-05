@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { adminApi } from '../api';
 import MainLayout from '../components/MainLayout';
+import './PaymentPage.css';
 
 function PaymentPage() {
   const [orders, setOrders] = useState([]);
@@ -13,6 +14,8 @@ function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const [receivedAmount, setReceivedAmount] = useState('');
   const [discount, setDiscount] = useState(0);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [lastPayment, setLastPayment] = useState(null);
 
   useEffect(() => {
     fetchOrdersForPayment();
@@ -26,8 +29,9 @@ function PaymentPage() {
       setError(null);
       
       const data = await adminApi.orders.getList();
+      // กรองแค่ออเดอร์ที่เสิร์ฟแล้วเท่านั้น (ไม่รวม completed เพราะชำระแล้ว)
       let payableOrders = (Array.isArray(data) ? data : []).filter(order => 
-        ['served', 'ready', 'completed'].includes(order.status)
+        order.status === 'served'
       );
       
       // Map field names to ensure consistency
@@ -35,13 +39,19 @@ function PaymentPage() {
         ...order,
         table_number: order.table_number || order.tableNumber || order.table_id,
         total_amount: order.total_amount || order.totalAmount,
-        created_at: order.created_at || order.createdAt,
+        created_at: typeof order.created_at === 'number' 
+          ? new Date(order.created_at * 1000).toISOString() 
+          : order.created_at,
         customer_name: order.customer_name || order.customerName || 'ลูกค้าทั่วไป',
         order_items: order.order_items || order.orderItems || order.items || []
       }));
       
       // Add fallback data if empty for testing
       if (payableOrders.length === 0) {
+        const now = Math.floor(Date.now() / 1000);
+        const oneHourAgo = now - (1 * 60 * 60);
+        const thirtyMinutesAgo = now - (30 * 60);
+        
         payableOrders = [
           {
             id: 4,
@@ -49,25 +59,27 @@ function PaymentPage() {
             table_number: 5,
             status: 'served',
             total_amount: 580,
-            created_at: new Date().toISOString(),
+            created_at: oneHourAgo,
             customer_name: 'คุณสมพร',
             order_items: [
-              { menu_name: 'ผัดกะเพรา', quantity: 1, price: 120 },
-              { menu_name: 'แกงเขียวหวาน', quantity: 1, price: 160 },
-              { menu_name: 'ข้าวเปล่า', quantity: 3, price: 100 }
+              { menu_name: 'ผัดกะเพรา', quantity: 1, price: 120, unit_price: 120 },
+              { menu_name: 'แกงเขียวหวาน', quantity: 1, price: 160, unit_price: 160 },
+              { menu_name: 'ข้าวเปล่า', quantity: 3, price: 100, unit_price: 33 },
+              { menu_name: 'น้ำใส', quantity: 2, price: 200, unit_price: 100 }
             ]
           },
           {
             id: 5,
             table_id: 6,
             table_number: 6,
-            status: 'ready',
+            status: 'served', // เปลี่ยนจาก ready เป็น served
             total_amount: 420,
-            created_at: new Date().toISOString(),
+            created_at: thirtyMinutesAgo,
             customer_name: 'คุณสมใจ',
             order_items: [
-              { menu_name: 'ลาบหมู', quantity: 1, price: 140 },
-              { menu_name: 'ส้มตำไทย', quantity: 2, price: 140 }
+              { menu_name: 'ลาบหมู', quantity: 1, price: 140, unit_price: 140 },
+              { menu_name: 'ส้มตำไทย', quantity: 2, price: 140, unit_price: 70 },
+              { menu_name: 'ข้าวเหนียว', quantity: 2, price: 140, unit_price: 70 }
             ]
           }
         ];
@@ -87,6 +99,7 @@ function PaymentPage() {
     setSelectedOrder(orderId);
     setSuccess(false);
     setError(null);
+    setShowReceipt(false);
     
     if (!orderId) {
       setOrderDetails(null);
@@ -94,6 +107,7 @@ function PaymentPage() {
     }
 
     try {
+      // Try to get order details from API first
       const orderData = await adminApi.orders.getById(orderId);
       
       // Map field names for consistency
@@ -101,22 +115,34 @@ function PaymentPage() {
         ...orderData,
         table_number: orderData.table_number || orderData.tableNumber || orderData.table_id,
         total_amount: orderData.total_amount || orderData.totalAmount,
-        created_at: orderData.created_at || orderData.createdAt,
+        created_at: typeof orderData.created_at === 'number' 
+          ? new Date(orderData.created_at * 1000).toISOString() 
+          : orderData.created_at,
         customer_name: orderData.customer_name || orderData.customerName || 'ลูกค้าทั่วไป',
         order_items: (orderData.order_items || orderData.orderItems || orderData.items || []).map(item => ({
           ...item,
           menu_name: item.menu_name || item.menuName || item.name,
           quantity: item.quantity,
-          price: item.price || item.unitPrice
+          price: item.price || item.unitPrice,
+          unit_price: item.unit_price || item.unitPrice || item.price
         }))
       };
       
       setOrderDetails(mappedOrderData);
       setReceivedAmount(mappedOrderData.total_amount?.toString() || '');
+      setDiscount(0);
     } catch (err) {
       console.error('Order details fetch error:', err);
-      setError(`ไม่สามารถโหลดรายละเอียดออเดอร์ได้: ${err.message}`);
-      setOrderDetails(null);
+      // If API fails, use data from orders list
+      const fallbackOrder = orders.find(order => order.id === parseInt(orderId));
+      if (fallbackOrder) {
+        setOrderDetails(fallbackOrder);
+        setReceivedAmount(fallbackOrder.total_amount?.toString() || '');
+        setDiscount(0);
+      } else {
+        setError(`ไม่สามารถโหลดรายละเอียดออเดอร์ได้: ${err.message}`);
+        setOrderDetails(null);
+      }
     }
   };
 
@@ -138,17 +164,33 @@ function PaymentPage() {
 
       const paymentData = {
         order_id: orderDetails.id,
+        amount_paid: totalAfterDiscount, // ใช้ amount_paid แทน amount
+        payment_method: paymentMethod,
+        transaction_time: new Date().toISOString()
+      };
+      
+      // Create payment record
+      const paymentResult = await adminApi.payments.create(paymentData);
+      
+      // Update order status to completed
+      await adminApi.orders.update(orderDetails.id, { status: 'completed' });
+      
+      // Store payment info for receipt
+      setLastPayment({
+        order_id: orderDetails.id,
         amount: totalAfterDiscount,
+        amount_paid: totalAfterDiscount,
         payment_method: paymentMethod,
         received_amount: received,
         change_amount: paymentMethod === 'cash' ? Math.max(0, received - totalAfterDiscount) : 0,
-        discount: discount
-      };
-      
-      await adminApi.payments.create(paymentData);
-      await adminApi.orders.update(orderDetails.id, { status: 'completed' });
+        discount: discount,
+        order: orderDetails,
+        payment_id: paymentResult?.id || Date.now(),
+        timestamp: new Date()
+      });
       
       setSuccess(true);
+      setShowReceipt(true);
       setSelectedOrder('');
       setOrderDetails(null);
       setReceivedAmount('');
@@ -169,7 +211,8 @@ function PaymentPage() {
       'cash': '💵',
       'credit_card': '💳',
       'bank_transfer': '🏦',
-      'qr_code': '📱'
+      'qr_code': '📱',
+      'e_wallet': '📲'
     };
     return icons[method] || '💰';
   };
@@ -179,95 +222,230 @@ function PaymentPage() {
       'cash': 'เงินสด',
       'credit_card': 'บัตรเครดิต',
       'bank_transfer': 'โอนเงิน',
-      'qr_code': 'QR Code'
+      'qr_code': 'QR Code',
+      'e_wallet': 'E-Wallet'
     };
     return texts[method] || method;
+  };
+
+  const getStatusText = (status) => {
+    const statusTexts = {
+      'pending': 'รอดำเนินการ',
+      'preparing': 'กำลังเตรียม',
+      'ready': 'พร้อมเสิร์ฟ',
+      'served': 'เสิร์ฟแล้ว',
+      'completed': 'เสร็จสิ้น',
+      'cancelled': 'ยกเลิก'
+    };
+    return statusTexts[status] || status;
+  };
+
+  const getRelativeTime = (dateString) => {
+    const now = new Date();
+    const orderTime = typeof dateString === 'number' ? new Date(dateString * 1000) : new Date(dateString);
+    const diffInMinutes = Math.floor((now - orderTime) / (1000 * 60));
+    
+    if (diffInMinutes < 1) {
+      return 'เพิ่งสั่ง';
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes} นาทีที่แล้ว`;
+    } else if (diffInMinutes < 1440) {
+      const hours = Math.floor(diffInMinutes / 60);
+      return `${hours} ชั่วโมงที่แล้ว`;
+    } else {
+      const days = Math.floor(diffInMinutes / 1440);
+      return `${days} วันที่แล้ว`;
+    }
   };
 
   const totalAfterDiscount = orderDetails ? orderDetails.total_amount - discount : 0;
   const changeAmount = paymentMethod === 'cash' && receivedAmount ? 
     Math.max(0, parseFloat(receivedAmount) - totalAfterDiscount) : 0;
 
+  const printReceipt = () => {
+    if (!lastPayment) return;
+    
+    const printWindow = window.open('', '', 'width=300,height=600');
+    const receiptHtml = `
+      <html>
+        <head>
+          <title>ใบเสร็จรับเงิน</title>
+          <style>
+            body { font-family: monospace; font-size: 12px; margin: 10px; }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .line { border-top: 1px dashed #000; margin: 5px 0; }
+            .total { font-size: 14px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="center bold">ร้านอาหาร POS</div>
+          <div class="center">ใบเสร็จรับเงิน</div>
+          <div class="line"></div>
+          <div>เลขที่: ${lastPayment.payment_id}</div>
+          <div>วันที่: ${lastPayment.timestamp.toLocaleString('th-TH')}</div>
+          <div>โต๊ะ: ${lastPayment.order.table_number}</div>
+          <div>ลูกค้า: ${lastPayment.order.customer_name}</div>
+          <div class="line"></div>
+          ${lastPayment.order.order_items.map(item => 
+            `<div>${item.menu_name} x${item.quantity} = ฿${item.price.toLocaleString()}</div>`
+          ).join('')}
+          <div class="line"></div>
+          <div>รวม: ฿${lastPayment.order.total_amount.toLocaleString()}</div>
+          ${lastPayment.discount > 0 ? `<div>ส่วนลด: -฿${lastPayment.discount.toLocaleString()}</div>` : ''}
+          <div class="total">ยอดชำระ: ฿${(lastPayment.amount || lastPayment.amount_paid).toLocaleString()}</div>
+          <div>วิธีชำระ: ${getPaymentMethodText(lastPayment.payment_method)}</div>
+          ${lastPayment.payment_method === 'cash' ? `
+            <div>รับเงิน: ฿${lastPayment.received_amount.toLocaleString()}</div>
+            <div>เงินทอน: ฿${lastPayment.change_amount.toLocaleString()}</div>
+          ` : ''}
+          <div class="line"></div>
+          <div class="center">ขอบคุณที่ใช้บริการ</div>
+        </body>
+      </html>
+    `;
+    
+    printWindow.document.write(receiptHtml);
+    printWindow.document.close();
+    printWindow.print();
+    printWindow.close();
+  };
+
   return (
     <MainLayout>
-      <div className="page-container">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border p-4 mb-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-xl font-bold text-gray-800 mb-1">ชำระเงิน</h1>
-              <p className="text-sm text-gray-600">จัดการการชำระเงินสำหรับออเดอร์</p>
+      <div className="modern-payment-page">
+        {/* Modern Header */}
+        <div className="modern-header">
+          <div className="header-content">
+            <div className="header-title-section">
+              <div className="header-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 18C15.89 18 15 18.89 15 20C15 21.11 15.89 22 17 22C18.11 22 19 21.11 19 20C19 18.89 18.11 18 17 18ZM1 2V4H3L6.6 11.59L5.24 14.04C5.09 14.32 5 14.65 5 15C5 16.11 5.89 17 7 17H19V15H7.42C7.28 15 7.17 14.89 7.17 14.75L7.2 14.63L8.1 13H15.55C16.3 13 16.96 12.58 17.3 11.97L20.88 5H5.21L4.27 3H1M7 18C5.89 18 5 18.89 5 20C5 21.11 5.89 22 7 22C8.11 22 9 21.11 9 20C9 18.89 8.11 18 7 18Z" fill="currentColor"/>
+                </svg>
+              </div>
+              <div>
+                <h1 className="header-title">ชำระเงิน</h1>
+                <p className="header-subtitle">จัดการการชำระเงินและพิมพ์ใบเสร็จ</p>
+              </div>
             </div>
-            <button onClick={fetchOrdersForPayment} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              <span className="text-sm mr-2">🔄</span>
+            <button onClick={fetchOrdersForPayment} className="refresh-btn" disabled={loading}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 4V9H4.58L6.15 6.5C7.8 4.3 10.8 3.7 13.5 5.2C16.2 6.7 17.2 10.1 15.7 12.8C14.2 15.5 10.8 16.5 8.1 15C7.4 14.6 6.8 14 6.4 13.3L4.8 14.8C5.4 15.8 6.2 16.7 7.2 17.2C10.9 19.3 15.5 18 17.6 14.3C19.7 10.6 18.4 6 14.7 3.9C11 1.8 6.4 3.1 4.3 6.8L2.8 9H7V11H2V6H4V4Z" fill="currentColor"/>
+              </svg>
               รีเฟรช
             </button>
           </div>
         </div>
-        
+
         {/* Success Message */}
         {success && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-            <div className="flex items-center">
-              <span className="text-2xl mr-3">✅</span>
-              <div>
-                <h4 className="font-semibold text-green-800">ชำระเงินสำเร็จ!</h4>
-                <p className="text-green-700">ออเดอร์ได้รับการชำระเงินเรียบร้อยแล้ว</p>
-              </div>
+          <div className="success-alert">
+            <div className="success-icon">✅</div>
+            <div>
+              <h4 className="success-title">ชำระเงินสำเร็จ!</h4>
+              <p className="success-message">ออเดอร์ได้รับการชำระเงินเรียบร้อยแล้ว</p>
+              {showReceipt && (
+                <button onClick={printReceipt} className="print-receipt-btn">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 3V1C18 0.45 17.55 0 17 0H7C6.45 0 6 0.45 6 1V3H4C2.9 3 2 3.9 2 5V15C2 16.1 2.9 17 4 17H6V21C6 21.55 6.45 22 7 22H17C17.55 22 18 21.55 18 21V17H20C21.1 17 22 16.1 22 15V5C22 3.9 21.1 3 20 3H18ZM8 2H16V3H8V2ZM16 20H8V16H16V20ZM18 15H16V14C16 13.45 15.55 13 15 13H9C8.45 13 8 13.45 8 14V15H6V5H18V15Z" fill="currentColor"/>
+                  </svg>
+                  พิมพ์ใบเสร็จ
+                </button>
+              )}
             </div>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-            <h4 className="font-semibold text-red-800">เกิดข้อผิดพลาด</h4>
-            <p className="text-red-700">{error}</p>
+          <div className="error-alert">
+            <div className="error-icon">⚠️</div>
+            <div>
+              <h4 className="error-title">เกิดข้อผิดพลาด</h4>
+              <p className="error-message">{error}</p>
+            </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Order Selection */}
-          <div className="bg-white rounded-lg shadow-sm border">
-            <div className="p-4 border-b">
-              <h3 className="text-lg font-semibold text-gray-800">เลือกออเดอร์</h3>
+        <div className="payment-grid">
+          {/* Orders List */}
+          <div className="orders-section">
+            <div className="section-header">
+              <h3 className="section-title">เลือกออเดอร์ที่ต้องการชำระเงิน</h3>
+              <div className="orders-count">
+                {orders.length} ออเดอร์
+              </div>
             </div>
-            <div className="p-4">
+            
+            <div className="orders-container">
               {loading ? (
-                <div className="text-center py-6">
-                  <div className="loading-spinner mx-auto mb-3"></div>
-                  <p className="text-gray-600">กำลังโหลดข้อมูล...</p>
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <p className="loading-text">กำลังโหลดข้อมูลออเดอร์...</p>
                 </div>
               ) : orders.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-3">💳</div>
-                  <h3 className="text-lg font-semibold mb-2 text-gray-800">ไม่มีออเดอร์ที่ต้องชำระเงิน</h3>
-                  <p className="text-gray-600 text-sm">ออเดอร์ที่พร้อมชำระเงินจะแสดงที่นี่</p>
+                <div className="empty-state">
+                  <div className="empty-icon">💳</div>
+                  <h3 className="empty-title">ไม่มีออเดอร์ที่ต้องชำระเงิน</h3>
+                  <p className="empty-message">ออเดอร์ที่พร้อมชำระเงินจะแสดงที่นี่</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="orders-list">
                   {orders.map((order) => (
                     <div
                       key={order.id}
                       onClick={() => handleOrderSelect(order.id)}
-                      className={`border rounded-lg p-3 cursor-pointer transition-colors hover:bg-gray-50 ${
-                        selectedOrder === order.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                      }`}
+                      className={`order-card ${selectedOrder === order.id ? 'selected' : ''}`}
                     >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h4 className="font-semibold text-gray-800">ออเดอร์ #{order.id}</h4>
-                          <p className="text-sm text-gray-600">โต๊ะ {order.table_id}</p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(order.created_at).toLocaleString('th-TH')}
-                          </p>
+                      <div className="order-header">
+                        <div className="order-info">
+                          <div className="order-id">ออเดอร์ #{order.id}</div>
+                          <div className="table-info">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="currentColor"/>
+                            </svg>
+                            โต๊ะ {order.table_number}
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <div className="font-bold text-lg text-blue-600">
-                            ฿{order.total_amount?.toLocaleString()}
-                          </div>
-                          <div className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
-                            {order.status === 'served' ? 'เสิร์ฟแล้ว' : 'พร้อมเสิร์ฟ'}
-                          </div>
+                        <div className="order-amount">
+                          ฿{order.total_amount?.toLocaleString()}
+                        </div>
+                      </div>
+                      
+                      <div className="order-meta">
+                        <div className="order-time">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM12.5 7H11V13L16.25 16.15L17 14.92L12.5 12.25V7Z" fill="currentColor"/>
+                          </svg>
+                          {getRelativeTime(order.created_at)}
+                        </div>
+                        <div className="order-customer">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
+                          </svg>
+                          {order.customer_name}
+                        </div>
+                        <div className="order-status">
+                          <span className={`status-badge ${order.status}`}>
+                            {getStatusText(order.status)}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="order-items-preview">
+                        <span className="items-count">
+                          {order.order_items?.length || 0} รายการ
+                        </span>
+                        <div className="items-list">
+                          {(order.order_items || []).slice(0, 2).map((item, idx) => (
+                            <span key={idx} className="item-name">
+                              {item.menu_name} x{item.quantity}
+                            </span>
+                          ))}
+                          {(order.order_items || []).length > 2 && (
+                            <span className="more-items">
+                              และอีก {(order.order_items || []).length - 2} รายการ
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -278,128 +456,173 @@ function PaymentPage() {
           </div>
 
           {/* Payment Details */}
-          <div className="bg-white rounded-lg shadow-sm border">
-            <div className="p-4 border-b">
-              <h3 className="text-lg font-semibold text-gray-800">รายละเอียดการชำระเงิน</h3>
+          <div className="payment-section">
+            <div className="section-header">
+              <h3 className="section-title">รายละเอียดการชำระเงิน</h3>
             </div>
-            <div className="p-4">
-              {!orderDetails ? (
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-3">👆</div>
-                  <p className="text-gray-600">กรุณาเลือกออเดอร์ที่ต้องการชำระเงิน</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Order Info */}
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <h4 className="font-semibold mb-2">ออเดอร์ #{orderDetails.id}</h4>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span>โต๊ะ:</span>
-                        <span>{orderDetails.table_number || orderDetails.table_id}</span>
+            
+            {!orderDetails ? (
+              <div className="payment-placeholder">
+                <div className="placeholder-icon">👆</div>
+                <h3 className="placeholder-title">เลือกออเดอร์เพื่อชำระเงิน</h3>
+                <p className="placeholder-message">กรุณาเลือกออเดอร์จากรายการด้านซ้าย</p>
+              </div>
+            ) : (
+              <div className="payment-details">
+                {/* Order Summary */}
+                <div className="order-summary">
+                  <div className="summary-header">
+                    <h4 className="summary-title">ออเดอร์ #{orderDetails.id}</h4>
+                    <div className="summary-info">
+                      <div className="info-item">
+                        <span className="info-label">โต๊ะ:</span>
+                        <span className="info-value">{orderDetails.table_number}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>จำนวนรายการ:</span>
-                        <span>{orderDetails.order_items?.length || 0} รายการ</span>
+                      <div className="info-item">
+                        <span className="info-label">ลูกค้า:</span>
+                        <span className="info-value">{orderDetails.customer_name}</span>
                       </div>
-                      <div className="flex justify-between font-semibold">
-                        <span>ยอดรวม:</span>
-                        <span>฿{orderDetails.total_amount?.toLocaleString()}</span>
+                      <div className="info-item">
+                        <span className="info-label">เวลา:</span>
+                        <span className="info-value">{getRelativeTime(orderDetails.created_at)}</span>
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Order Items */}
+                  <div className="order-items">
+                    <h5 className="items-title">รายการอาหาร</h5>
+                    <div className="items-list">
+                      {(orderDetails.order_items || []).map((item, idx) => (
+                        <div key={idx} className="item-row">
+                          <div className="item-details">
+                            <span className="item-name">{item.menu_name}</span>
+                            <span className="item-quantity">x{item.quantity}</span>
+                          </div>
+                          <span className="item-price">฿{item.price?.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="items-total">
+                      <span className="total-label">ยอดรวม:</span>
+                      <span className="total-amount">฿{orderDetails.total_amount?.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
 
-                  {/* Payment Method */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      วิธีการชำระเงิน
+                {/* Payment Method Selection */}
+                <div className="payment-method">
+                  <h5 className="method-title">วิธีการชำระเงิน</h5>
+                  <div className="method-grid">
+                    {['cash', 'credit_card', 'bank_transfer', 'qr_code', 'e_wallet'].map((method) => (
+                      <button
+                        key={method}
+                        onClick={() => setPaymentMethod(method)}
+                        className={`method-btn ${paymentMethod === method ? 'active' : ''}`}
+                      >
+                        <div className="method-icon">{getPaymentMethodIcon(method)}</div>
+                        <div className="method-text">{getPaymentMethodText(method)}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Discount */}
+                <div className="discount-section">
+                  <label className="discount-label">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M21 7L9 19L3.5 13.5L4.91 12.09L9 16.17L19.59 5.59L21 7Z" fill="currentColor"/>
+                    </svg>
+                    ส่วนลด (บาท)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max={orderDetails.total_amount}
+                    value={discount}
+                    onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                    className="discount-input"
+                    placeholder="0"
+                  />
+                </div>
+
+                {/* Cash Payment */}
+                {paymentMethod === 'cash' && (
+                  <div className="cash-section">
+                    <label className="cash-label">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 6C5.55 6 6 5.55 6 5S5.55 4 5 4 4 4.45 4 5 4.45 6 5 6M5 8C5.55 8 6 7.55 6 7S5.55 6 5 6 4 6.45 4 7 4.45 8 5 8M7 5C7 5.55 7.45 6 8 6S9 5.55 9 5 8.55 4 8 4 7 4.45 7 5M7 7C7 7.55 7.45 8 8 8S9 7.55 9 7 8.55 6 8 6 7 6.45 7 7M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="currentColor"/>
+                      </svg>
+                      จำนวนเงินที่รับ
                     </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {['cash', 'credit_card', 'bank_transfer', 'qr_code'].map((method) => (
+                    <input
+                      type="number"
+                      min={totalAfterDiscount}
+                      value={receivedAmount}
+                      onChange={(e) => setReceivedAmount(e.target.value)}
+                      className="cash-input"
+                      placeholder={totalAfterDiscount.toString()}
+                    />
+                    <div className="quick-amounts">
+                      {[totalAfterDiscount, Math.ceil(totalAfterDiscount / 100) * 100, Math.ceil(totalAfterDiscount / 500) * 500, Math.ceil(totalAfterDiscount / 1000) * 1000].filter((amount, index, arr) => arr.indexOf(amount) === index).map((amount) => (
                         <button
-                          key={method}
-                          onClick={() => setPaymentMethod(method)}
-                          className={`p-3 border rounded-lg text-center transition-colors ${
-                            paymentMethod === method
-                              ? 'border-blue-500 bg-blue-50 text-blue-700'
-                              : 'border-gray-200 hover:bg-gray-50'
-                          }`}
+                          key={amount}
+                          onClick={() => setReceivedAmount(amount.toString())}
+                          className="quick-amount-btn"
                         >
-                          <div className="text-xl mb-1">{getPaymentMethodIcon(method)}</div>
-                          <div className="text-xs font-medium">{getPaymentMethodText(method)}</div>
+                          ฿{amount.toLocaleString()}
                         </button>
                       ))}
                     </div>
                   </div>
+                )}
 
-                  {/* Discount */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      ส่วนลด (บาท)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={orderDetails.total_amount}
-                      value={discount}
-                      onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="0"
-                    />
+                {/* Payment Summary */}
+                <div className="payment-summary">
+                  <div className="summary-row">
+                    <span className="summary-label">ยอดรวม:</span>
+                    <span className="summary-value">฿{orderDetails.total_amount?.toLocaleString()}</span>
                   </div>
-
-                  {/* Cash Payment Fields */}
-                  {paymentMethod === 'cash' && (
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        จำนวนเงินที่รับ
-                      </label>
-                      <input
-                        type="number"
-                        min={totalAfterDiscount}
-                        value={receivedAmount}
-                        onChange={(e) => setReceivedAmount(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder={totalAfterDiscount.toString()}
-                      />
+                  {discount > 0 && (
+                    <div className="summary-row discount">
+                      <span className="summary-label">ส่วนลด:</span>
+                      <span className="summary-value">-฿{discount.toLocaleString()}</span>
                     </div>
                   )}
-
-                  {/* Payment Summary */}
-                  <div className="bg-blue-50 rounded-lg p-3 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>ยอดรวม:</span>
-                      <span>฿{orderDetails.total_amount?.toLocaleString()}</span>
-                    </div>
-                    {discount > 0 && (
-                      <div className="flex justify-between text-sm text-red-600">
-                        <span>ส่วนลด:</span>
-                        <span>-฿{discount.toLocaleString()}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between font-bold text-lg border-t pt-2">
-                      <span>ยอดที่ต้องชำระ:</span>
-                      <span>฿{totalAfterDiscount.toLocaleString()}</span>
-                    </div>
-                    {paymentMethod === 'cash' && changeAmount > 0 && (
-                      <div className="flex justify-between text-sm text-green-600">
-                        <span>เงินทอน:</span>
-                        <span>฿{changeAmount.toLocaleString()}</span>
-                      </div>
-                    )}
+                  <div className="summary-row total">
+                    <span className="summary-label">ยอดที่ต้องชำระ:</span>
+                    <span className="summary-value">฿{totalAfterDiscount.toLocaleString()}</span>
                   </div>
-
-                  {/* Payment Button */}
-                  <button
-                    onClick={handlePayment}
-                    disabled={paying || (paymentMethod === 'cash' && parseFloat(receivedAmount) < totalAfterDiscount)}
-                    className="w-full py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {paying ? 'กำลังดำเนินการ...' : `ชำระเงิน ฿${totalAfterDiscount.toLocaleString()}`}
-                  </button>
+                  {paymentMethod === 'cash' && changeAmount > 0 && (
+                    <div className="summary-row change">
+                      <span className="summary-label">เงินทอน:</span>
+                      <span className="summary-value">฿{changeAmount.toLocaleString()}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+
+                {/* Payment Button */}
+                <button
+                  onClick={handlePayment}
+                  disabled={paying || (paymentMethod === 'cash' && parseFloat(receivedAmount) < totalAfterDiscount)}
+                  className="payment-btn"
+                >
+                  {paying ? (
+                    <>
+                      <div className="btn-spinner"></div>
+                      กำลังดำเนินการ...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 16.2L4.8 12L3.4 13.4L9 19L21 7L19.6 5.6L9 16.2Z" fill="currentColor"/>
+                      </svg>
+                      ชำระเงิน ฿{totalAfterDiscount.toLocaleString()}
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
