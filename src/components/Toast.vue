@@ -65,7 +65,7 @@
   </TransitionRoot>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { TransitionRoot } from '@headlessui/vue'
 import {
   CheckCircleIcon,
@@ -75,25 +75,25 @@ import {
   XMarkIcon
 } from '@heroicons/vue/24/outline'
 
-defineProps({
-  show: {
-    type: Boolean,
-    default: false
-  },
-  type: {
-    type: String,
-    default: 'success',
-    validator: (value) => ['success', 'error', 'warning', 'info'].includes(value)
-  },
-  title: {
-    type: String,
-    required: true
-  },
-  message: {
-    type: String,
-    default: ''
-  }
+export type ToastType = 'success' | 'error' | 'warning' | 'info'
+
+interface Props {
+  show: boolean
+  type: ToastType
+  title: string
+  message?: string
+}
+
+interface Emits {
+  close: []
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  show: false,
+  type: 'success',
+  title: '',
+  message: ''
 })
 
-defineEmits(['close'])
+defineEmits<Emits>()
 </script>

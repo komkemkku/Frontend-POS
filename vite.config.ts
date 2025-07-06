@@ -17,15 +17,15 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path: string) => path.replace(/^\/api/, ''),
         configure: (proxy) => {
-          proxy.on('error', (err) => {
+          proxy.on('error', (err: any) => {
             console.log('proxy error', err);
           });
-          proxy.on('proxyReq', (proxyReq, req) => {
+          proxy.on('proxyReq', (proxyReq: any, req: any) => {
             console.log('Sending Request to the Target:', req.method, req.url);
           });
-          proxy.on('proxyRes', (proxyRes, req) => {
+          proxy.on('proxyRes', (proxyRes: any, req: any) => {
             console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
           });
         },

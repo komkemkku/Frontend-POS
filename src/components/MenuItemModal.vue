@@ -213,8 +213,8 @@
   </TransitionRoot>
 </template>
 
-<script setup>
-import { ref, computed, watch } from 'vue'
+<script setup lang="ts">
+import { ref, computed, watch, type Ref } from 'vue'
 import {
   Dialog,
   DialogPanel,
@@ -226,29 +226,42 @@ import {
   XMarkIcon,
   PhotoIcon
 } from '@heroicons/vue/24/outline'
+import type { MenuItem, Category, MenuItemOptions } from '../types/menu'
 
-const props = defineProps({
-  open: {
-    type: Boolean,
-    default: false
-  },
-  menuItem: {
-    type: Object,
-    default: () => ({})
-  },
-  categories: {
-    type: Array,
-    default: () => []
-  }
+interface MenuItemFormData {
+  name: string
+  category_id: string | number
+  description: string
+  price: number
+  image_url: string
+  is_available: boolean
+  options: MenuItemOptions
+}
+
+interface Props {
+  open: boolean
+  menuItem: Partial<MenuItem>
+  categories: Category[]
+}
+
+interface Emits {
+  close: []
+  save: [menuItem: MenuItemFormData & { id?: number }]
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  open: false,
+  menuItem: () => ({}),
+  categories: () => []
 })
 
-const emit = defineEmits(['close', 'save'])
+const emit = defineEmits<Emits>()
 
-const loading = ref(false)
-const previewUrl = ref('')
-const isDrinkCategory = ref(false)
+const loading = ref<boolean>(false)
+const previewUrl = ref<string>('')
+const isDrinkCategory = ref<boolean>(false)
 
-const form = ref({
+const form: Ref<MenuItemFormData> = ref({
   name: '',
   category_id: '',
   description: '',
@@ -267,9 +280,9 @@ const isFormValid = computed(() => {
 })
 
 // Check if selected category is drink category
-const onCategoryChange = () => {
-  const selectedCategory = props.categories.find(cat => cat.id === parseInt(form.value.category_id))
-  isDrinkCategory.value = selectedCategory && selectedCategory.name.includes('เครื่องดื่ม')
+const onCategoryChange = (): void => {
+  const selectedCategory = props.categories.find(cat => cat.id === parseInt(form.value.category_id.toString()))
+  isDrinkCategory.value = selectedCategory ? selectedCategory.name.includes('เครื่องดื่ม') : false
   
   // Reset drink options when changing category
   if (!isDrinkCategory.value) {
@@ -282,14 +295,14 @@ const onCategoryChange = () => {
 }
 
 // Reset form when modal opens/closes
-watch(() => props.open, (newVal) => {
+watch(() => props.open, (newVal: boolean) => {
   if (newVal) {
     resetForm()
   }
 })
 
 // Watch for menuItem changes (for edit mode)
-watch(() => props.menuItem, (newVal) => {
+watch(() => props.menuItem, (newVal: Partial<MenuItem>) => {
   if (newVal && newVal.id) {
     form.value = {
       name: newVal.name || '',
@@ -309,7 +322,7 @@ watch(() => props.menuItem, (newVal) => {
   }
 }, { immediate: true })
 
-const resetForm = () => {
+const resetForm = (): void => {
   if (!props.menuItem.id) {
     form.value = {
       name: '',
@@ -329,13 +342,14 @@ const resetForm = () => {
   }
 }
 
-const handleImageUpload = (event) => {
-  const file = event.target.files[0]
+const handleImageUpload = (event: Event): void => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
   if (file) {
     // Create preview URL
     const reader = new FileReader()
-    reader.onload = (e) => {
-      previewUrl.value = e.target.result
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      previewUrl.value = e.target?.result as string
     }
     reader.readAsDataURL(file)
     
@@ -345,11 +359,11 @@ const handleImageUpload = (event) => {
   }
 }
 
-const handleUrlInput = () => {
+const handleUrlInput = (): void => {
   previewUrl.value = form.value.image_url
 }
 
-const saveMenuItem = async () => {
+const saveMenuItem = async (): Promise<void> => {
   if (!isFormValid.value) return
   
   loading.value = true
@@ -358,7 +372,7 @@ const saveMenuItem = async () => {
     let finalForm = { ...form.value, id: props.menuItem.id }
     
     if (isDrinkCategory.value) {
-      const selectedOptions = []
+      const selectedOptions: string[] = []
       if (form.value.options.cold) selectedOptions.push('เย็น')
       if (form.value.options.hot) selectedOptions.push('ร้อน')
       if (form.value.options.blended) selectedOptions.push('ปั่น')
@@ -377,7 +391,7 @@ const saveMenuItem = async () => {
   }
 }
 
-const close = () => {
+const close = (): void => {
   emit('close')
 }
 </script>

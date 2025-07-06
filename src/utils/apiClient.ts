@@ -1,7 +1,8 @@
-import axios from 'axios'
+import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosResponse } from 'axios'
+import type { ApiResponse } from '@/types/auth'
 
 // สร้าง axios instance ที่มี interceptor สำหรับ token
-const api = axios.create({
+const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'https://backend-pos-production.up.railway.app',
   timeout: 10000,
   headers: {
@@ -14,9 +15,9 @@ console.log('API Base URL:', import.meta.env.VITE_API_BASE_URL || 'https://backe
 
 // Interceptor สำหรับเพิ่ม auth token
 api.interceptors.request.use(
-  (config) => {
+  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
     const token = localStorage.getItem('auth_token')
-    if (token) {
+    if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
@@ -28,7 +29,7 @@ api.interceptors.request.use(
 
 // Interceptor สำหรับจัดการ response
 api.interceptors.response.use(
-  (response) => response,
+  (response: AxiosResponse<ApiResponse>): AxiosResponse<ApiResponse> => response,
   (error) => {
     if (error.response?.status === 401) {
       // Token หมดอายุ ให้ redirect ไป login

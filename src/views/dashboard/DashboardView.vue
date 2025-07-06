@@ -280,11 +280,12 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, computed, onUnmounted, type Ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { dashboardService } from '@/services/dashboardService'
+import { dashboardService } from '@/services/dashboard.service'
 import SalesChartVue from '@/components/SalesChartVue.vue'
+import type { DashboardData, ChartPeriod } from '@/types'
 import {
   CurrencyDollarIcon,
   ShoppingCartIcon,
@@ -303,17 +304,22 @@ import {
 const $router = useRouter()
 
 // Reactive data
-const loading = ref(false)
-const refreshing = ref(false)
-const error = ref(null)
-const dashboardData = ref(null)
-const selectedPeriod = ref('7d')
-const lastRefresh = ref(new Date())
-const autoRefreshInterval = ref(null)
-const autoRefreshEnabled = ref(true)
+const loading = ref<boolean>(false)
+const refreshing = ref<boolean>(false)
+const error = ref<string | null>(null)
+const dashboardData: Ref<DashboardData | null> = ref(null)
+const selectedPeriod = ref<ChartPeriod>('7d')
+const lastRefresh = ref<Date>(new Date())
+const autoRefreshInterval = ref<number | null>(null)
+const autoRefreshEnabled = ref<boolean>(true)
+
+interface ChartPeriodOption {
+  value: ChartPeriod
+  label: string
+}
 
 // Chart periods
-const chartPeriods = ref([
+const chartPeriods = ref<ChartPeriodOption[]>([
   { value: '7d', label: '7 วัน' },
   { value: '30d', label: '30 วัน' },
   { value: '90d', label: '3 เดือน' }
@@ -505,9 +511,9 @@ const loadDashboardData = async () => {
     dashboardData.value = response
     lastRefresh.value = new Date() // อัปเดตเวลารีเฟรชล่าสุด
     console.log('Dashboard data loaded:', response)
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('Dashboard error:', err)
-    error.value = err.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล'
+    error.value = (err as Error)?.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล'
   } finally {
     loading.value = false
   }
@@ -517,8 +523,8 @@ const refreshData = async () => {
   await handleRefreshData()
 }
 
-const getStatusColor = (status) => {
-  const colors = {
+const getStatusColor = (status: string): string => {
+  const colors: Record<string, string> = {
     pending: 'bg-yellow-100 text-yellow-800',
     preparing: 'bg-blue-100 text-blue-800',
     ready: 'bg-green-100 text-green-800',
@@ -527,8 +533,8 @@ const getStatusColor = (status) => {
   return colors[status] || 'bg-gray-100 text-gray-800'
 }
 
-const getStatusText = (status) => {
-  const texts = {
+const getStatusText = (status: string): string => {
+  const texts: Record<string, string> = {
     pending: 'รอดำเนินการ',
     preparing: 'กำลังเตรียม',
     ready: 'พร้อมเสิร์ฟ',
@@ -537,8 +543,13 @@ const getStatusText = (status) => {
   return texts[status] || status
 }
 
-const formatTime = (timestamp) => {
-  const date = new Date(timestamp * 1000) // Convert Unix timestamp to milliseconds
+const formatTime = (timestamp: string | number): string => {
+  let date: Date
+  if (typeof timestamp === 'string') {
+    date = new Date(timestamp)
+  } else {
+    date = new Date(timestamp * 1000) // Convert Unix timestamp to milliseconds
+  }
   return date.toLocaleTimeString('th-TH', { 
     hour: '2-digit', 
     minute: '2-digit' 
@@ -602,10 +613,10 @@ const handleRefreshData = async () => {    console.log('🔄 Starting data refre
 }
 
 // Auto-refresh functionality
-const startAutoRefresh = () => {
+const startAutoRefresh = (): void => {
   if (autoRefreshInterval.value) clearInterval(autoRefreshInterval.value)
   
-  autoRefreshInterval.value = setInterval(async () => {
+  autoRefreshInterval.value = window.setInterval(async () => {
     if (!refreshing.value && autoRefreshEnabled.value) {
       console.log('🔄 Auto-refreshing data...')
       await loadDashboardData()
@@ -614,14 +625,14 @@ const startAutoRefresh = () => {
   }, 30000) // 30 seconds
 }
 
-const stopAutoRefresh = () => {
+const stopAutoRefresh = (): void => {
   if (autoRefreshInterval.value) {
     clearInterval(autoRefreshInterval.value)
     autoRefreshInterval.value = null
   }
 }
 
-const toggleAutoRefresh = () => {
+const toggleAutoRefresh = (): void => {
   autoRefreshEnabled.value = !autoRefreshEnabled.value
   if (autoRefreshEnabled.value) {
     startAutoRefresh()
@@ -633,7 +644,7 @@ const toggleAutoRefresh = () => {
 }
 
 // Simple notification system
-const showNotification = (message, type = 'info') => {
+const showNotification = (message: string, type: 'info' | 'success' | 'error' = 'info'): void => {
   // สร้าง toast notification แบบง่าย
   const toast = document.createElement('div')
   toast.className = `fixed top-4 right-4 z-50 px-4 py-2 rounded-lg text-white font-medium transform transition-all duration-300 ${
@@ -660,6 +671,30 @@ const showNotification = (message, type = 'info') => {
   }, 3000)
 }
 
+// Keyboard shortcuts handler
+const handleKeyboard = (event: KeyboardEvent): void => {
+  if (event.ctrlKey || event.metaKey) {
+    switch (event.key) {
+      case 'n':
+        event.preventDefault()
+        handleCreateOrder()
+        break
+      case 'm':
+        event.preventDefault()
+        handleAddMenu()
+        break
+      case 't':
+        event.preventDefault()
+        handleManageTables()
+        break
+      case 'r':
+        event.preventDefault()
+        handleRefreshData()
+        break
+    }
+  }
+}
+
 // Lifecycle
 onMounted(() => {
   console.log('DashboardView mounted')
@@ -667,41 +702,18 @@ onMounted(() => {
   
   // Auto-refresh every 30 seconds
   if (autoRefreshEnabled.value) {
-    autoRefreshInterval.value = setInterval(() => {
+    autoRefreshInterval.value = window.setInterval(() => {
       console.log('Auto-refreshing dashboard data...')
       refreshData()
     }, 30000)
   }
   
-  // Add keyboard shortcuts
-  const handleKeyboard = (event) => {
-    if (event.ctrlKey || event.metaKey) {
-      switch (event.key) {
-        case 'n':
-          event.preventDefault()
-          handleCreateOrder()
-          break
-        case 'm':
-          event.preventDefault()
-          handleAddMenu()
-          break
-        case 't':
-          event.preventDefault()
-          handleManageTables()
-          break
-        case 'r':
-          event.preventDefault()
-          handleRefreshData()
-          break
-      }
-    }
-  }
-  
   document.addEventListener('keydown', handleKeyboard)
-  
-  // Cleanup
-  return () => {
-    document.removeEventListener('keydown', handleKeyboard)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeyboard)
+  if (autoRefreshInterval.value) {
     clearInterval(autoRefreshInterval.value)
   }
 })

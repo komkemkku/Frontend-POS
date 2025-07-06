@@ -126,32 +126,52 @@
   </TransitionRoot>
 </template>
 
-<script setup>
-import { ref, watch, computed } from 'vue'
+<script setup lang="ts">
+import { ref, watch, computed, type Ref } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { TagIcon } from '@heroicons/vue/24/outline'
+import type { Category } from '../types/menu'
 
-const props = defineProps({
-  open: {
-    type: Boolean,
-    default: false
-  },
-  category: {
-    type: Object,
-    default: () => ({})
-  }
+interface CategoryFormData {
+  id?: number
+  name: string
+  description: string
+  display_order: string
+  is_active: boolean
+}
+
+interface FormErrors {
+  name?: string
+  description?: string
+  display_order?: string
+}
+
+interface Props {
+  open: boolean
+  category?: Partial<Category>
+}
+
+interface Emits {
+  close: []
+  save: [formData: CategoryFormData]
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  open: false,
+  category: () => ({})
 })
 
-const emit = defineEmits(['close', 'save'])
+const emit = defineEmits<Emits>()
 
-const formData = ref({
+const formData: Ref<CategoryFormData> = ref({
   name: '',
   description: '',
-  display_order: ''
+  display_order: '',
+  is_active: true
 })
 
-const errors = ref({})
-const isSubmitting = ref(false)
+const errors: Ref<FormErrors> = ref({})
+const isSubmitting = ref<boolean>(false)
 
 const isEditing = computed(() => !!props.category?.id)
 
@@ -162,41 +182,43 @@ watch(() => props.category, (newCategory) => {
       id: newCategory.id,
       name: newCategory.name || '',
       description: newCategory.description || '',
-      display_order: newCategory.display_order || ''
+      display_order: newCategory.display_order?.toString() || '',
+      is_active: newCategory.is_active ?? true
     }
   } else {
     // Reset form for new category
     formData.value = {
       name: '',
       description: '',
-      display_order: ''
+      display_order: '',
+      is_active: true
     }
   }
   errors.value = {}
 }, { immediate: true })
 
 // Watch for open prop to reset form
-watch(() => props.open, (isOpen) => {
+watch(() => props.open, (isOpen: boolean) => {
   if (!isOpen) {
     errors.value = {}
   }
 })
 
-const validateForm = () => {
+const validateForm = (): boolean => {
   errors.value = {}
   
   if (!formData.value.name?.trim()) {
     errors.value.name = 'กรุณากรอกชื่อหมวดหมู่'
   }
   
-  if (formData.value.display_order && isNaN(formData.value.display_order)) {
+  if (formData.value.display_order && isNaN(Number(formData.value.display_order))) {
     errors.value.display_order = 'ลำดับการแสดงต้องเป็นตัวเลข'
   }
   
   return Object.keys(errors.value).length === 0
 }
 
-const handleSubmit = async () => {
+const handleSubmit = async (): Promise<void> => {
   if (!validateForm()) {
     console.log('Validation failed:', errors.value)
     return
@@ -205,22 +227,26 @@ const handleSubmit = async () => {
   isSubmitting.value = true
   
   try {
-    const submitData = {
+    const submitData: CategoryFormData = {
       name: formData.value.name.trim(),
       description: formData.value.description?.trim() || '',
-      display_order: formData.value.display_order ? formData.value.display_order.toString() : '1'
+      display_order: formData.value.display_order ? formData.value.display_order.toString() : '1',
+      is_active: formData.value.is_active
     }
     
-    if (isEditing.value) {
+    if (isEditing.value && formData.value.id) {
       submitData.id = formData.value.id
     }
     
+    console.log('CategoryModal: About to submit data:', submitData)
+    console.log('CategoryModal: Is editing?', isEditing.value)
+    
     console.log('CategoryModal: Submitting data:', submitData)
     
-    // Emit to parent and wait for response
-    await emit('save', submitData)
+    // Emit to parent - this now works as the parent handles the promise properly
+    emit('save', submitData)
     
-    console.log('CategoryModal: Save completed successfully')
+    console.log('CategoryModal: Save event emitted')
   } catch (error) {
     console.error('CategoryModal: Error submitting form:', error)
   } finally {

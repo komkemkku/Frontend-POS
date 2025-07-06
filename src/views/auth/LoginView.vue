@@ -123,22 +123,23 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import POSLogo from '@/components/POSLogo.vue'
+import type { LoginCredentials } from '@/types'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const form = ref({
+const form = ref<LoginCredentials & { remember: boolean }>({
   username: 'admin', // Default for testing
   password: 'password', // Default for testing  
   remember: false
 })
 
-const handleLogin = async () => {
+const handleLogin = async (): Promise<void> => {
   authStore.clearError()
   
   console.log('Login attempt:', { username: form.value.username })

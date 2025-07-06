@@ -136,7 +136,7 @@
         class="space-y-2"
       >
         <Toast
-          v-for="(toastItem, index) in toastQueue"
+          v-for="toastItem in toastQueue"
           :key="toastItem.id"
           :show="true"
           :type="toastItem.type"
@@ -169,8 +169,8 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted, type Ref } from 'vue'
 import { TransitionGroup } from 'vue'
 import {
   PlusIcon,
@@ -180,25 +180,36 @@ import {
   HashtagIcon,
   ClipboardDocumentListIcon
 } from '@heroicons/vue/24/outline'
-import { categoryService } from '@/services/categoryService'
-import { menuService } from '@/services/menuService'
+import { menuService } from '@/services/menu.service'
 import CategoryModal from '@/components/CategoryModal.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import Toast from '@/components/Toast.vue'
+import type { Category, MenuItem } from '@/types/menu'
 
-const categories = ref([])
-const menuItems = ref([])
-const loading = ref(false)
-const showModal = ref(false)
-const selectedCategory = ref({})
-const showDeleteDialog = ref(false)
-const itemToDelete = ref(null)
+interface ToastItem {
+  id: number
+  type: 'success' | 'error' | 'warning' | 'info'
+  title: string
+  message: string
+}
+
+interface CategoryFilters {
+  search: string
+}
+
+const categories: Ref<Category[]> = ref([])
+const menuItems: Ref<MenuItem[]> = ref([])
+const loading = ref<boolean>(false)
+const showModal = ref<boolean>(false)
+const selectedCategory: Ref<Partial<Category>> = ref({})
+const showDeleteDialog = ref<boolean>(false)
+const itemToDelete: Ref<Category | null> = ref(null)
 
 // Toast queue state
-const toastQueue = ref([])
+const toastQueue: Ref<ToastItem[]> = ref([])
 let toastIdCounter = 0
 
-const filters = ref({
+const filters: Ref<CategoryFilters> = ref({
   search: ''
 })
 
@@ -214,8 +225,8 @@ const filteredCategories = computed(() => {
 
   // Sort by display_order, then by name
   return items.sort((a, b) => {
-    const orderA = parseInt(a.display_order) || 999
-    const orderB = parseInt(b.display_order) || 999
+    const orderA = parseInt(a.display_order?.toString() || '999') || 999
+    const orderB = parseInt(b.display_order?.toString() || '999') || 999
     
     if (orderA !== orderB) {
       return orderA - orderB
@@ -229,13 +240,11 @@ const loadCategories = async () => {
   try {
     loading.value = true
     console.log('Loading categories...')
-    const response = await categoryService.getCategories()
+    const response = await menuService.getCategories()
     console.log('Categories response:', response)
     
-    if (response.status?.code === 200 || response.status === 'success' || response.data) {
-      categories.value = response.data || response.results || []
-      console.log('Categories loaded:', categories.value.length, 'items')
-    }
+    categories.value = response
+    console.log('Categories loaded:', categories.value.length, 'items')
   } catch (error) {
     console.error('Error loading categories:', error)
     addToast('error', '❌ โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถโหลดข้อมูลหมวดหมู่ได้')
@@ -244,22 +253,20 @@ const loadCategories = async () => {
   }
 }
 
-const loadMenuItems = async () => {
+const loadMenuItems = async (): Promise<void> => {
   try {
     const response = await menuService.getMenuItems()
-    if (response.status.code === 200) {
-      menuItems.value = response.data || []
-    }
+    menuItems.value = response
   } catch (error) {
     console.error('Error loading menu items:', error)
   }
 }
 
-const getMenuItemsCount = (categoryId) => {
+const getMenuItemsCount = (categoryId: number): number => {
   return menuItems.value.filter(item => item.category_id === categoryId).length
 }
 
-const deleteCategory = (category) => {
+const deleteCategory = (category: Category): void => {
   // Check if category has menu items
   const menuCount = getMenuItemsCount(category.id)
   if (menuCount > 0) {
@@ -287,7 +294,7 @@ const clearFilters = () => {
 }
 
 // Toast functions
-const addToast = (type, title, message = '') => {
+const addToast = (type: 'success' | 'error' | 'warning' | 'info', title: string, message = ''): void => {
   const id = ++toastIdCounter
   const newToast = {
     id,
@@ -304,130 +311,185 @@ const addToast = (type, title, message = '') => {
   }, 4000)
 }
 
-const removeToast = (id) => {
+const removeToast = (id: number): void => {
   const index = toastQueue.value.findIndex(t => t.id === id)
   if (index > -1) {
     toastQueue.value.splice(index, 1)
   }
 }
 
-const confirmDelete = async () => {
+const confirmDelete = async (): Promise<void> => {
   if (!itemToDelete.value) return
   
   try {
-    const response = await categoryService.deleteCategory(itemToDelete.value.id)
-    console.log('Delete response:', response)
+    console.log('CategoriesView: Attempting to delete category:', itemToDelete.value.name)
     
-    // ตรวจสอบ response structure
-    if (response.status?.code === 200 || response.status === 'success' || response.code === 200) {
-      categories.value = categories.value.filter(c => c.id !== itemToDelete.value.id)
-      closeDeleteDialog()
-      addToast(
-        'success', 
-        '🗑️ ลบหมวดหมู่สำเร็จ', 
-        `ลบหมวดหมู่ "${itemToDelete.value.name}" ออกจากระบบเรียบร้อยแล้ว`
-      )
-    } else {
-      throw new Error('Unexpected response format')
-    }
-  } catch (error) {
-    console.error('Error deleting category:', error)
-    console.error('Error response:', error.response?.data)
+    await menuService.deleteCategory(itemToDelete.value.id)
+    console.log('CategoriesView: Delete API call completed successfully')
     
-    // ตรวจสอบว่าถูกลบจริงหรือไม่โดยการ reload ข้อมูล
+    // Remove from local state immediately
+    const deletedCategoryName = itemToDelete.value.name
+    categories.value = categories.value.filter(c => c.id !== itemToDelete.value!.id)
+    
+    closeDeleteDialog()
+    
+    // Show success message
+    addToast(
+      'success', 
+      '🗑️ ลบหมวดหมู่สำเร็จ', 
+      `ลบหมวดหมู่ "${deletedCategoryName}" ออกจากระบบเรียบร้อยแล้ว`
+    )
+    
+    console.log('CategoriesView: Delete completed and UI updated')
+    
+  } catch (error: unknown) {
+    console.error('CategoriesView: Error deleting category:', error)
+    console.error('CategoriesView: Error details:', (error as any)?.response)
+    
+    // Check if the item was actually deleted by reloading data
+    const originalLength = categories.value.length
     await loadCategories()
     
-    // ถ้าข้อมูลหายไปจริงๆ แสดงว่าลบสำเร็จ
-    const stillExists = categories.value.find(c => c.id === itemToDelete.value.id)
-    if (!stillExists) {
+    // If the category is gone from the server, consider it a success
+    const stillExists = categories.value.find(c => c.id === itemToDelete.value!.id)
+    
+    if (!stillExists && categories.value.length < originalLength) {
+      console.log('CategoriesView: Category was actually deleted despite error')
       closeDeleteDialog()
       addToast(
         'success', 
         '🗑️ ลบหมวดหมู่สำเร็จ', 
-        `ลบหมวดหมู่ "${itemToDelete.value.name}" ออกจากระบบเรียบร้อยแล้ว`
+        `ลบหมวดหมู่ "${itemToDelete.value!.name}" ออกจากระบบเรียบร้อยแล้ว`
       )
     } else {
+      console.log('CategoriesView: Category still exists, showing error')
+      
+      let errorMessage = 'เกิดข้อผิดพลาดระหว่างการลบ'
+      
+      if ((error as Error)?.message?.includes('ไม่พบหมวดหมู่')) {
+        errorMessage = 'หมวดหมู่นี้ไม่พบในระบบ อาจถูกลบไปแล้ว'
+        // If not found, treat as success and remove from UI
+        categories.value = categories.value.filter(c => c.id !== itemToDelete.value!.id)
+        closeDeleteDialog()
+        addToast('info', 'ℹ️ หมวดหมู่ได้ถูกลบไปแล้ว', errorMessage)
+        return
+      } else if ((error as any)?.response?.status === 401) {
+        errorMessage = 'กรุณาเข้าสู่ระบบใหม่'
+      } else if ((error as any)?.response?.status === 403) {
+        errorMessage = 'ไม่มีสิทธิ์ในการลบหมวดหมู่นี้'
+      } else if ((error as Error)?.message) {
+        errorMessage = (error as Error).message
+      }
+      
       addToast(
         'error', 
         '❌ ไม่สามารถลบหมวดหมู่ได้', 
-        'เกิดข้อผิดพลาดระหว่างการลบ กรุณาลองใหม่อีกครั้ง'
+        errorMessage
       )
     }
   }
 }
 
-const openCreateModal = () => {
+const openCreateModal = (): void => {
   selectedCategory.value = {}
   showModal.value = true
 }
 
-const openEditModal = (category) => {
+const openEditModal = (category: Category): void => {
   selectedCategory.value = { ...category }
   showModal.value = true
 }
 
-const closeModal = () => {
+const closeModal = (): void => {
   showModal.value = false
   selectedCategory.value = {}
 }
 
-const saveCategory = async (formData) => {
+interface CategoryFormData {
+  id?: number
+  name: string
+  description?: string
+  image_url?: string
+  is_active: boolean
+  sort_order?: number
+  display_order?: string
+}
+
+const saveCategory = async (formData: CategoryFormData): Promise<void> => {
   try {
     console.log('CategoriesView: Saving category with data:', formData)
-    let response
+    let response: Category
     
     if (formData.id) {
       // Update existing category
-      response = await categoryService.updateCategory(formData.id, {
+      console.log('CategoriesView: Updating existing category')
+      response = await menuService.updateCategory(formData.id, {
         name: formData.name,
         description: formData.description,
-        display_order: formData.display_order
+        display_order: formData.display_order || '1',
+        is_active: formData.is_active
       })
       
-      console.log('Update response:', response)
-      if (response.status?.code === 200 || response.status === 'success' || response.code === 200) {
-        // Reload ข้อมูลเพื่อให้แน่ใจว่าได้ข้อมูลล่าสุด
-        await loadCategories()
-        addToast(
-          'success', 
-          '✏️ แก้ไขหมวดหมู่สำเร็จ', 
-          `อัปเดตข้อมูลหมวดหมู่ "${formData.name}" เรียบร้อยแล้ว`
-        )
-        closeModal()
-        return response
-      }
+      console.log('CategoriesView: Update response:', response)
+      // Reload ข้อมูลเพื่อให้แน่ใจว่าได้ข้อมูลล่าสุด
+      await loadCategories()
+      addToast(
+        'success', 
+        '✏️ แก้ไขหมวดหมู่สำเร็จ', 
+        `อัปเดตข้อมูลหมวดหมู่ "${formData.name}" เรียบร้อยแล้ว`
+      )
+      closeModal()
     } else {
       // Create new category
-      response = await categoryService.createCategory({
+      console.log('CategoriesView: Creating new category')
+      response = await menuService.createCategory({
         name: formData.name,
         description: formData.description,
-        display_order: formData.display_order
+        display_order: formData.display_order || '1',
+        is_active: formData.is_active
       })
       
-      console.log('Create response:', response)
-      if (response.status?.code === 200 || response.status === 'success' || response.code === 200) {
-        // Reload ข้อมูลเพื่อให้แน่ใจว่าได้ข้อมูลล่าสุดรวมถึงข้อมูลใหม่
-        await loadCategories()
-        addToast(
-          'success', 
-          '🏷️ เพิ่มหมวดหมู่ใหม่สำเร็จ', 
-          `หมวดหมู่ "${formData.name}" พร้อมใช้งานแล้ว`
-        )
-        closeModal()
-        return response
-      }
+      console.log('CategoriesView: Create response:', response)
+      // Reload ข้อมูลเพื่อให้แน่ใจว่าได้ข้อมูลล่าสุดรวมถึงข้อมูลใหม่
+      await loadCategories()
+      addToast(
+        'success', 
+        '🏷️ เพิ่มหมวดหมู่ใหม่สำเร็จ', 
+        `หมวดหมู่ "${formData.name}" พร้อมใช้งานแล้ว`
+      )
+      closeModal()
     }
     
-    throw new Error(`API returned unexpected status: ${response?.status?.code || response?.code || 'unknown'}`)
-  } catch (error) {
+    console.log('CategoriesView: Save operation completed successfully')
+    
+  } catch (error: unknown) {
     console.error('CategoriesView: Error saving category:', error)
-    console.error('CategoriesView: Error response:', error.response?.data)
+    console.error('CategoriesView: Error response:', (error as any)?.response?.data)
+    
+    let errorMessage = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'
+    
+    if ((error as Error)?.message?.includes('API endpoint ไม่พบ')) {
+      errorMessage = 'ขณะนี้ยังไม่สามารถดำเนินการได้ กรุณาติดต่อผู้ดูแลระบบ'
+    } else if ((error as Error)?.message?.includes('ยังไม่รองรับ')) {
+      errorMessage = 'ขณะนี้ยังไม่สามารถดำเนินการได้ กรุณาติดต่อผู้ดูแลระบบ'
+    } else if ((error as any)?.response?.status === 401) {
+      errorMessage = 'กรุณาเข้าสู่ระบบใหม่'
+    } else if ((error as any)?.response?.status === 403) {
+      errorMessage = 'ไม่มีสิทธิ์ในการดำเนินการนี้'
+    } else if ((error as any)?.response?.data?.message) {
+      errorMessage = (error as any).response.data.message
+    } else if ((error as Error)?.message) {
+      errorMessage = (error as Error).message
+    }
+    
     addToast(
       'error', 
-      '💾 ไม่สามารถบันทึกได้', 
-      `เกิดข้อผิดพลาด: ${error.response?.data?.message || error.message || 'กรุณาลองใหม่อีกครั้ง'}`
+      formData.id ? '💾 ไม่สามารถแก้ไขได้' : '💾 ไม่สามารถเพิ่มได้', 
+      errorMessage
     )
-    throw error // Re-throw เพื่อให้ Modal รู้ว่ามี error
+    
+    // Don't close modal and don't re-throw error to prevent infinite loading
+    console.log('CategoriesView: Error handled, modal remains open for user to retry')
   }
 }
 

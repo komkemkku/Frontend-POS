@@ -168,7 +168,7 @@
         class="space-y-2"
       >
         <Toast
-          v-for="(toastItem, index) in toastQueue"
+          v-for="toastItem in toastQueue"
           :key="toastItem.id"
           :show="true"
           :type="toastItem.type"
@@ -202,8 +202,8 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted, type Ref } from 'vue'
 import { TransitionGroup } from 'vue'
 import {
   PlusIcon,
@@ -213,24 +213,48 @@ import {
   EyeIcon,
   EyeSlashIcon
 } from '@heroicons/vue/24/outline'
-import { menuService } from '@/services/menuService'
+import { menuService } from '@/services/menu.service'
 import MenuItemModal from '@/components/MenuItemModal.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import Toast from '@/components/Toast.vue'
+import type { MenuItem, Category } from '@/types'
 
-const menuItems = ref([])
-const categories = ref([])
-const loading = ref(false)
-const showModal = ref(false)
-const selectedMenuItem = ref({})
-const showDeleteDialog = ref(false)
-const itemToDelete = ref(null)
+interface ToastItem {
+  id: number
+  type: 'success' | 'error' | 'warning' | 'info'
+  title: string
+  message: string
+}
+
+interface MenuFilters {
+  search: string
+  category: string
+  available: string
+}
+
+interface MenuFormData {
+  id?: number
+  name: string
+  description?: string
+  price: number
+  category_id: string | number
+  image_url?: string
+  is_available: boolean
+}
+
+const menuItems: Ref<MenuItem[]> = ref([])
+const categories: Ref<Category[]> = ref([])
+const loading = ref<boolean>(false)
+const showModal = ref<boolean>(false)
+const selectedMenuItem: Ref<Partial<MenuItem>> = ref({})
+const showDeleteDialog = ref<boolean>(false)
+const itemToDelete: Ref<MenuItem | null> = ref(null)
 
 // Toast queue state
-const toastQueue = ref([])
+const toastQueue: Ref<ToastItem[]> = ref([])
 let toastIdCounter = 0
 
-const filters = ref({
+const filters: Ref<MenuFilters> = ref({
   search: '',
   category: '',
   available: ''
@@ -242,7 +266,7 @@ const filteredMenuItems = computed(() => {
   if (filters.value.search) {
     items = items.filter(item =>
       item.name.toLowerCase().includes(filters.value.search.toLowerCase()) ||
-      item.description.toLowerCase().includes(filters.value.search.toLowerCase())
+      (item.description && item.description.toLowerCase().includes(filters.value.search.toLowerCase()))
     )
   }
 
@@ -257,13 +281,11 @@ const filteredMenuItems = computed(() => {
   return items
 })
 
-const loadMenuItems = async () => {
+const loadMenuItems = async (): Promise<void> => {
   try {
     loading.value = true
     const response = await menuService.getMenuItems()
-    if (response.status.code === 200) {
-      menuItems.value = response.data
-    }
+    menuItems.value = response
   } catch (error) {
     console.error('Error loading menu items:', error)
   } finally {
@@ -271,23 +293,21 @@ const loadMenuItems = async () => {
   }
 }
 
-const loadCategories = async () => {
+const loadCategories = async (): Promise<void> => {
   try {
     const response = await menuService.getCategories()
-    if (response.status.code === 200) {
-      categories.value = response.data
-    }
+    categories.value = response
   } catch (error) {
     console.error('Error loading categories:', error)
   }
 }
 
-const getCategoryName = (categoryId) => {
+const getCategoryName = (categoryId: number): string => {
   const category = categories.value.find(c => c.id === categoryId)
   return category?.name || 'ไม่ระบุ'
 }
 
-const toggleAvailability = async (item) => {
+const toggleAvailability = async (item: MenuItem): Promise<void> => {
   try {
     const newStatus = !item.is_available
     const response = await menuService.updateMenuItem(item.id, {
@@ -298,22 +318,21 @@ const toggleAvailability = async (item) => {
       image_url: item.image_url,
       is_available: newStatus
     })
-    if (response.status.code === 200) {
-      item.is_available = newStatus
-      
-      if (newStatus) {
-        showToast(
-          'success', 
-          '🟢 เปิดให้บริการแล้ว',
-          `เมนู "${item.name}" พร้อมจำหน่าย ลูกค้าสามารถสั่งได้`
-        )
-      } else {
-        showToast(
-          'info', 
-          '🔴 ปิดให้บริการแล้ว',
-          `เมนู "${item.name}" หยุดจำหน่ายชั่วคราว`
-        )
-      }
+    
+    item.is_available = newStatus
+    
+    if (newStatus) {
+      showToast(
+        'success', 
+        '🟢 เปิดให้บริการแล้ว',
+        `เมนู "${item.name}" พร้อมจำหน่าย ลูกค้าสามารถสั่งได้`
+      )
+    } else {
+      showToast(
+        'info', 
+        '🔴 ปิดให้บริการแล้ว',
+        `เมนู "${item.name}" หยุดจำหน่ายชั่วคราว`
+      )
     }
   } catch (error) {
     console.error('Error toggling availability:', error)
@@ -321,17 +340,17 @@ const toggleAvailability = async (item) => {
   }
 }
 
-const deleteMenuItem = (item) => {
+const deleteMenuItem = (item: MenuItem): void => {
   itemToDelete.value = item
   showDeleteDialog.value = true
 }
 
-const closeDeleteDialog = () => {
+const closeDeleteDialog = (): void => {
   showDeleteDialog.value = false
   itemToDelete.value = null
 }
 
-const clearFilters = () => {
+const clearFilters = (): void => {
   filters.value = {
     search: '',
     category: '',
@@ -340,7 +359,7 @@ const clearFilters = () => {
 }
 
 // Toast functions
-const addToast = (type, title, message = '') => {
+const addToast = (type: 'success' | 'error' | 'warning' | 'info', title: string, message = ''): void => {
   const id = ++toastIdCounter
   const newToast = {
     id,
@@ -357,7 +376,7 @@ const addToast = (type, title, message = '') => {
   }, 4000)
 }
 
-const removeToast = (id) => {
+const removeToast = (id: number): void => {
   const index = toastQueue.value.findIndex(t => t.id === id)
   if (index > -1) {
     toastQueue.value.splice(index, 1)
@@ -366,26 +385,81 @@ const removeToast = (id) => {
 
 const showToast = addToast // Alias for backward compatibility
 
-const confirmDelete = async () => {
+const confirmDelete = async (): Promise<void> => {
   if (!itemToDelete.value) return
   
   try {
-    const response = await menuService.deleteMenuItem(itemToDelete.value.id)
-    if (response.status.code === 200) {
-      menuItems.value = menuItems.value.filter(i => i.id !== itemToDelete.value.id)
-      closeDeleteDialog()
-      showToast(
-        'success', 
-        '🗑️ ลบเมนูสำเร็จ', 
-        `ลบเมนู "${itemToDelete.value.name}" ออกจากระบบเรียบร้อยแล้ว`
-      )
+    console.log('MenuView: Attempting to delete menu item:', itemToDelete.value.name)
+    
+    await menuService.deleteMenuItem(itemToDelete.value.id)
+    console.log('MenuView: Delete API call completed successfully')
+    
+    // Remove from local state immediately
+    const deletedItemName = itemToDelete.value.name
+    menuItems.value = menuItems.value.filter(i => i.id !== itemToDelete.value!.id)
+    
+    closeDeleteDialog()
+    
+    // Show success message
+    showToast(
+      'success', 
+      '🗑️ ลบเมนูสำเร็จ', 
+      `ลบเมนู "${deletedItemName}" ออกจากระบบเรียบร้อยแล้ว`
+    )
+    
+    console.log('MenuView: Delete completed and UI updated')
+    
+  } catch (error: unknown) {
+    console.error('MenuView: Error deleting menu item:', error)
+    console.error('MenuView: Error details:', (error as any)?.response)
+    
+    // Check if the item was actually deleted by checking if it still exists
+    const originalLength = menuItems.value.length
+    
+    // Reload menu items to check current state
+    try {
+      const currentItems = await menuService.getMenuItems()
+      const stillExists = currentItems.find(i => i.id === itemToDelete.value!.id)
+      
+      if (!stillExists) {
+        console.log('MenuView: Menu item was actually deleted despite error')
+        menuItems.value = currentItems // Update with fresh data
+        closeDeleteDialog()
+        showToast(
+          'success', 
+          '🗑️ ลบเมนูสำเร็จ', 
+          `ลบเมนู "${itemToDelete.value!.name}" ออกจากระบบเรียบร้อยแล้ว`
+        )
+        return
+      }
+    } catch (reloadError) {
+      console.error('MenuView: Error reloading menu items:', reloadError)
     }
-  } catch (error) {
-    console.error('Error deleting menu item:', error)
+    
+    // If we get here, the delete actually failed
+    console.log('MenuView: Menu item still exists, showing error')
+    
+    let errorMessage = 'เกิดข้อผิดพลาดระหว่างการลบ'
+    
+    if ((error as Error)?.message?.includes('ไม่พบเมนู')) {
+      errorMessage = 'เมนูนี้ไม่พบในระบบ อาจถูกลบไปแล้ว'
+      // If not found, treat as success and remove from UI
+      menuItems.value = menuItems.value.filter(i => i.id !== itemToDelete.value!.id)
+      closeDeleteDialog()
+      showToast('info', 'ℹ️ เมนูได้ถูกลบไปแล้ว', errorMessage)
+      return
+    } else if ((error as any)?.response?.status === 401) {
+      errorMessage = 'กรุณาเข้าสู่ระบบใหม่'
+    } else if ((error as any)?.response?.status === 403) {
+      errorMessage = 'ไม่มีสิทธิ์ในการลบเมนูนี้'
+    } else if ((error as Error)?.message) {
+      errorMessage = (error as Error).message
+    }
+    
     showToast(
       'error', 
       '❌ ไม่สามารถลบเมนูได้', 
-      'เกิดข้อผิดพลาดระหว่างการลบ กรุณาลองใหม่อีกครั้ง'
+      errorMessage
     )
   }
 }
@@ -395,24 +469,25 @@ const openCreateModal = () => {
   showModal.value = true
 }
 
-const openEditModal = (item) => {
+const openEditModal = (item: MenuItem): void => {
   selectedMenuItem.value = { ...item }
   showModal.value = true
 }
 
-const closeModal = () => {
+const closeModal = (): void => {
   showModal.value = false
   selectedMenuItem.value = {}
 }
 
-const saveMenuItem = async (formData) => {
+const saveMenuItem = async (formData: MenuFormData): Promise<void> => {
   try {
-    let response
+    let response: MenuItem
+    const categoryId = typeof formData.category_id === 'string' ? parseInt(formData.category_id) : formData.category_id
     
     if (formData.id) {
       // Update existing menu item
       response = await menuService.updateMenuItem(formData.id, {
-        category_id: formData.category_id,
+        category_id: categoryId,
         name: formData.name,
         description: formData.description,
         price: formData.price,
@@ -420,22 +495,24 @@ const saveMenuItem = async (formData) => {
         is_available: formData.is_available
       })
       
-      if (response.status.code === 200) {
-        // Update in local array
-        const index = menuItems.value.findIndex(item => item.id === formData.id)
-        if (index !== -1) {
-          menuItems.value[index] = { ...menuItems.value[index], ...formData }
+      // Update in local array
+      const index = menuItems.value.findIndex(item => item.id === formData.id)
+      if (index !== -1) {
+        menuItems.value[index] = { 
+          ...menuItems.value[index], 
+          ...formData,
+          category_id: categoryId
         }
-        showToast(
-          'success', 
-          '✏️ แก้ไขเมนูสำเร็จ', 
-          `อัปเดตข้อมูลเมนู "${formData.name}" เรียบร้อยแล้ว`
-        )
       }
+      showToast(
+        'success', 
+        '✏️ แก้ไขเมนูสำเร็จ', 
+        `อัปเดตข้อมูลเมนู "${formData.name}" เรียบร้อยแล้ว`
+      )
     } else {
       // Create new menu item
       response = await menuService.createMenuItem({
-        category_id: formData.category_id,
+        category_id: categoryId,
         name: formData.name,
         description: formData.description,
         price: formData.price,
@@ -443,15 +520,13 @@ const saveMenuItem = async (formData) => {
         is_available: formData.is_available
       })
       
-      if (response.status.code === 200) {
-        // Add to local array
-        menuItems.value.unshift(response.data)
-        showToast(
-          'success', 
-          '🍽️ เพิ่มเมนูใหม่สำเร็จ', 
-          `เมนู "${formData.name}" พร้อมให้บริการแล้ว`
-        )
-      }
+      // Add to local array
+      menuItems.value.unshift(response)
+      showToast(
+        'success', 
+        '🍽️ เพิ่มเมนูใหม่สำเร็จ', 
+        `เมนู "${formData.name}" พร้อมให้บริการแล้ว`
+      )
     }
     
     closeModal()

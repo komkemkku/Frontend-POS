@@ -87,7 +87,7 @@
   </TransitionRoot>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import {
   Dialog,
@@ -101,35 +101,32 @@ import {
   TrashIcon
 } from '@heroicons/vue/24/outline'
 
-// eslint-disable-next-line no-unused-vars
-const props = defineProps({
-  open: {
-    type: Boolean,
-    default: false
-  },
-  title: {
-    type: String,
-    default: 'ยืนยันการลบ'
-  },
-  message: {
-    type: String,
-    default: 'คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้'
-  },
-  itemName: {
-    type: String,
-    default: ''
-  },
-  itemDescription: {
-    type: String,
-    default: ''
-  }
+interface Props {
+  open: boolean
+  title: string
+  message: string
+  itemName?: string
+  itemDescription?: string
+}
+
+interface Emits {
+  close: []
+  confirm: []
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  open: false,
+  title: 'ยืนยันการลบ',
+  message: 'คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้',
+  itemName: '',
+  itemDescription: ''
 })
 
-const emit = defineEmits(['close', 'confirm'])
+const emit = defineEmits<Emits>()
 
-const loading = ref(false)
+const loading = ref<boolean>(false)
 
-const confirm = async () => {
+const confirm = async (): Promise<void> => {
   loading.value = true
   try {
     await emit('confirm')
@@ -138,7 +135,7 @@ const confirm = async () => {
   }
 }
 
-const close = () => {
+const close = (): void => {
   if (!loading.value) {
     emit('close')
   }

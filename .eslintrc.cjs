@@ -5,7 +5,8 @@ module.exports = {
   root: true,
   'extends': [
     'plugin:vue/vue3-essential',
-    'eslint:recommended'
+    'eslint:recommended',
+    '@vue/eslint-config-typescript'
   ],
   parserOptions: {
     ecmaVersion: 'latest',
@@ -15,5 +16,14 @@ module.exports = {
     browser: true,
     es2021: true,
     node: true
+  },
+  rules: {
+    // TypeScript specific rules
+    '@typescript-eslint/no-unused-vars': ['error', { 
+      'argsIgnorePattern': '^_',
+      'varsIgnorePattern': '^_'
+    }],
+    // Vue specific rules
+    'vue/multi-word-component-names': 'off'
   }
 }
