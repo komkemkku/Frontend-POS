@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo: Modal Confirmation - หน้าจัดการพนักงาน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .confirm-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        .confirm-modal {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-width: 480px;
+            width: 90%;
+            max-height: 90vh;
+            overflow: hidden;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .confirm-modal__header {
+            padding: 2rem 2rem 1rem 2rem;
+            text-align: center;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .confirm-modal__icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            margin-bottom: 1rem;
+        }
+        
+        .icon--danger {
+            width: 2rem;
+            height: 2rem;
+            color: #dc2626;
+        }
+        
+        .confirm-modal__title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .confirm-modal__content {
+            padding: 1.5rem 2rem;
+        }
+        
+        .confirm-modal__message {
+            color: #6b7280;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin: 0 0 1.5rem 0;
+            text-align: center;
+        }
+        
+        .staff-info {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        
+        .staff-info__item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .staff-info__item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .staff-info__label {
+            font-weight: 600;
+            color: #475569;
+        }
+        
+        .staff-info__value {
+            font-weight: 700;
+            color: #1e293b;
+            background: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .warning-note {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #92400e;
+            font-weight: 500;
+        }
+        
+        .warning-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            flex-shrink: 0;
+        }
+        
+        .confirm-modal__actions {
+            padding: 1.5rem 2rem 2rem 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: none;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn--secondary {
+            background: #f8fafc;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .btn--secondary:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+        
+        .btn--danger {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+        }
+        
+        .btn--danger:hover {
+            background: linear-gradient(135deg, #b91c1c, #991b1b);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .loading-spinner {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .demo-button {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+        }
+        
+        .demo-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">🗑️ Demo: Modal Confirmation</h1>
+            <p class="text-gray-600 mb-8">
+                ทดสอบ Modal ยืนยันการลบพนักงานที่สวยงาม<br>
+                แทนการใช้ window.confirm() ธรรมดา
+            </p>
+            
+            <div class="space-y-4">
+                <button class="demo-button" onclick="showConfirmationModal('สมชาย ใจดี', 'ผู้จัดการ')">
+                    ลบพนักงาน "สมชาย ใจดี" (ผู้จัดการ)
+                </button>
+                
+                <button class="demo-button" onclick="showConfirmationModal('สมหญิง สุขใส', 'พนักงานขาย')">
+                    ลบพนักงาน "สมหญิง สุขใส" (พนักงานขาย)
+                </button>
+                
+                <button class="demo-button" onclick="showConfirmationModal()">
+                    ลบพนักงาน (ไม่มีข้อมูล)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal (Hidden by default) -->
+    <div id="confirmModal" class="confirm-modal-overlay" style="display: none;">
+        <div class="confirm-modal">
+            <!-- Header -->
+            <div class="confirm-modal__header">
+                <div class="confirm-modal__icon">
+                    <svg class="icon icon--danger" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <h3 class="confirm-modal__title">ยืนยันการลบพนักงาน</h3>
+            </div>
+
+            <!-- Content -->
+            <div class="confirm-modal__content">
+                <p id="confirmMessage" class="confirm-modal__message">
+                    คุณต้องการลบพนักงานคนนี้ออกจากระบบหรือไม่?
+                </p>
+                <div id="staffInfo" class="staff-info" style="display: none;">
+                    <div class="staff-info__item">
+                        <span class="staff-info__label">ชื่อ:</span>
+                        <span id="staffName" class="staff-info__value"></span>
+                    </div>
+                    <div class="staff-info__item">
+                        <span class="staff-info__label">ตำแหน่ง:</span>
+                        <span id="staffRole" class="staff-info__value"></span>
+                    </div>
+                </div>
+                <div class="warning-note">
+                    <svg class="warning-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                    <span>การกระทำนี้ไม่สามารถย้อนกลับได้</span>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="confirm-modal__actions">
+                <button class="btn btn--secondary" onclick="cancelDelete()">
+                    ยกเลิก
+                </button>
+                <button id="confirmBtn" class="btn btn--danger" onclick="confirmDelete()">
+                    <span id="confirmBtnText">ยืนยันการลบ</span>
+                    <span id="loadingSpinner" class="loading-spinner" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showConfirmationModal(staffName, staffRole) {
+            const modal = document.getElementById('confirmModal');
+            const message = document.getElementById('confirmMessage');
+            const staffInfo = document.getElementById('staffInfo');
+            const nameElement = document.getElementById('staffName');
+            const roleElement = document.getElementById('staffRole');
+            
+            if (staffName && staffRole) {
+                message.textContent = `คุณต้องการลบพนักงาน "${staffName}" ออกจากระบบหรือไม่?`;
+                nameElement.textContent = staffName;
+                roleElement.textContent = staffRole;
+                staffInfo.style.display = 'block';
+            } else {
+                message.textContent = 'คุณต้องการลบพนักงานคนนี้ออกจากระบบหรือไม่?';
+                staffInfo.style.display = 'none';
+            }
+            
+            modal.style.display = 'flex';
+            
+            // Focus trap
+            const confirmBtn = document.getElementById('confirmBtn');
+            setTimeout(() => confirmBtn.focus(), 100);
+        }
+        
+        function hideModal() {
+            const modal = document.getElementById('confirmModal');
+            modal.style.display = 'none';
+            
+            // Reset loading state
+            const confirmBtn = document.getElementById('confirmBtn');
+            const btnText = document.getElementById('confirmBtnText');
+            const spinner = document.getElementById('loadingSpinner');
+            
+            confirmBtn.disabled = false;
+            btnText.style.display = 'inline';
+            spinner.style.display = 'none';
+        }
+        
+        function cancelDelete() {
+            hideModal();
+            
+            // Show info notification (mock)
+            setTimeout(() => {
+                alert('ℹ️ การลบพนักงานถูกยกเลิกแล้ว');
+            }, 300);
+        }
+        
+        function confirmDelete() {
+            const confirmBtn = document.getElementById('confirmBtn');
+            const btnText = document.getElementById('confirmBtnText');
+            const spinner = document.getElementById('loadingSpinner');
+            
+            // Show loading state
+            confirmBtn.disabled = true;
+            btnText.style.display = 'none';
+            spinner.style.display = 'inline-block';
+            
+            // Simulate API call
+            setTimeout(() => {
+                hideModal();
+                
+                // Show success notification (mock)
+                setTimeout(() => {
+                    alert('✅ ลบพนักงานสำเร็จ!');
+                }, 300);
+            }, 2000);
+        }
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('confirmModal');
+                if (modal.style.display === 'flex') {
+                    cancelDelete();
+                }
+            }
+        });
+        
+        // Close modal when clicking overlay
+        document.getElementById('confirmModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                cancelDelete();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend API Test - Staff Management</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #2563eb;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background-color: #f9fafb;
+        }
+        
+        .section h3 {
+            color: #1f2937;
+            margin-top: 0;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        button {
+            background-color: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #2563eb;
+        }
+        
+        button.danger {
+            background-color: #dc2626;
+        }
+        
+        button.danger:hover {
+            background-color: #b91c1c;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .success {
+            background-color: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        
+        .error {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        
+        .info {
+            background-color: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+        
+        .config {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .inline-form {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+        }
+        
+        .inline-form input {
+            flex: 1;
+        }
+        
+        .inline-form button {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Backend API Test - Staff Management</h1>
+        
+        <div class="config">
+            <h4>⚙️ Configuration</h4>
+            <div class="form-group">
+                <label for="baseUrl">Backend Base URL:</label>
+                <input type="text" id="baseUrl" value="https://backend-pos-production.up.railway.app/api" />
+            </div>
+            <div class="form-group">
+                <label for="authToken">Authorization Token:</label>
+                <input type="text" id="authToken" placeholder="Bearer token (optional for some endpoints)" />
+            </div>
+        </div>
+
+        <!-- Login Section -->
+        <div class="section">
+            <h3>🔐 Login (Get Token)</h3>
+            <div class="form-group">
+                <label for="loginUsername">Username:</label>
+                <input type="text" id="loginUsername" value="admin" />
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" value="admin123" />
+            </div>
+            <button onclick="testLogin()">Login & Get Token</button>
+            <div id="loginResult" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Staff List Section -->
+        <div class="section">
+            <h3>📋 Get Staff List</h3>
+            <div class="inline-form">
+                <input type="number" id="listPage" placeholder="Page (default: 1)" value="1" />
+                <input type="number" id="listSize" placeholder="Size (default: 10)" value="10" />
+                <input type="text" id="listSearch" placeholder="Search term (optional)" />
+                <button onclick="testStaffList()">Get Staff List</button>
+            </div>
+            <div id="staffListResult" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Get Staff by ID Section -->
+        <div class="section">
+            <h3>👤 Get Staff by ID</h3>
+            <div class="inline-form">
+                <input type="number" id="getStaffId" placeholder="Staff ID" value="1" />
+                <button onclick="testGetStaffById()">Get Staff</button>
+            </div>
+            <div id="getStaffResult" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Create Staff Section -->
+        <div class="section">
+            <h3>➕ Create New Staff</h3>
+            <div class="form-group">
+                <label for="createUsername">Username:</label>
+                <input type="text" id="createUsername" value="testuser" />
+            </div>
+            <div class="form-group">
+                <label for="createPassword">Password:</label>
+                <input type="password" id="createPassword" value="password123" />
+            </div>
+            <div class="form-group">
+                <label for="createFullName">Full Name:</label>
+                <input type="text" id="createFullName" value="Test User" />
+            </div>
+            <div class="form-group">
+                <label for="createRole">Role:</label>
+                <select id="createRole">
+                    <option value="staff">Staff</option>
+                    <option value="admin">Admin</option>
+                    <option value="manager">Manager</option>
+                </select>
+            </div>
+            <button onclick="testCreateStaff()">Create Staff</button>
+            <div id="createStaffResult" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Update Staff Section -->
+        <div class="section">
+            <h3>✏️ Update Staff</h3>
+            <div class="form-group">
+                <label for="updateId">Staff ID:</label>
+                <input type="number" id="updateId" value="1" />
+            </div>
+            <div class="form-group">
+                <label for="updateUsername">Username:</label>
+                <input type="text" id="updateUsername" value="updateduser" />
+            </div>
+            <div class="form-group">
+                <label for="updatePassword">New Password (optional):</label>
+                <input type="password" id="updatePassword" placeholder="Leave empty to keep current" />
+            </div>
+            <div class="form-group">
+                <label for="updateFullName">Full Name:</label>
+                <input type="text" id="updateFullName" value="Updated User" />
+            </div>
+            <div class="form-group">
+                <label for="updateRole">Role:</label>
+                <select id="updateRole">
+                    <option value="staff">Staff</option>
+                    <option value="admin">Admin</option>
+                    <option value="manager">Manager</option>
+                </select>
+            </div>
+            <button onclick="testUpdateStaff()">Update Staff</button>
+            <div id="updateStaffResult" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Delete Staff Section -->
+        <div class="section">
+            <h3>🗑️ Delete Staff</h3>
+            <div class="inline-form">
+                <input type="number" id="deleteId" placeholder="Staff ID to delete" />
+                <button class="danger" onclick="testDeleteStaff()">Delete Staff</button>
+            </div>
+            <div id="deleteStaffResult" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Get Current Staff Info -->
+        <div class="section">
+            <h3>ℹ️ Get Current Staff Info</h3>
+            <button onclick="testGetCurrentStaffInfo()">Get Current Staff Info</button>
+            <div id="currentStaffResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function getBaseUrl() {
+            return document.getElementById('baseUrl').value;
+        }
+
+        function getAuthToken() {
+            return document.getElementById('authToken').value;
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${isError ? 'error' : 'success'}`;
+            element.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+        }
+
+        function showInfo(elementId, data) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = 'result info';
+            element.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+        }
+
+        async function makeRequest(method, endpoint, data = null, useAuth = true) {
+            try {
+                const url = getBaseUrl() + endpoint;
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+
+                if (useAuth && getAuthToken()) {
+                    headers['Authorization'] = `Bearer ${getAuthToken()}`;
+                }
+
+                const config = {
+                    method,
+                    headers,
+                };
+
+                if (data) {
+                    config.body = JSON.stringify(data);
+                }
+
+                console.log('Making request:', { url, method, headers, data });
+
+                const response = await fetch(url, config);
+                const responseData = await response.json();
+
+                console.log('Response:', { status: response.status, data: responseData });
+
+                return {
+                    success: response.ok,
+                    status: response.status,
+                    data: responseData
+                };
+            } catch (error) {
+                console.error('Request error:', error);
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        async function testLogin() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const result = await makeRequest('POST', '/staff/login', {
+                username,
+                password
+            }, false);
+
+            if (result.success && result.data.status?.code === 200) {
+                const token = result.data.data?.token;
+                if (token) {
+                    document.getElementById('authToken').value = token;
+                    showResult('loginResult', `Login successful! Token: ${token}`);
+                } else {
+                    showResult('loginResult', result.data, true);
+                }
+            } else {
+                showResult('loginResult', result.error || result.data, true);
+            }
+        }
+
+        async function testStaffList() {
+            const page = document.getElementById('listPage').value;
+            const size = document.getElementById('listSize').value;
+            const search = document.getElementById('listSearch').value;
+
+            let query = new URLSearchParams();
+            if (page) query.append('page', page);
+            if (size) query.append('size', size);
+            if (search) query.append('search', search);
+
+            const queryString = query.toString();
+            const endpoint = queryString ? `/staff?${queryString}` : '/staff';
+
+            const result = await makeRequest('GET', endpoint);
+
+            if (result.success) {
+                showResult('staffListResult', result.data);
+            } else {
+                showResult('staffListResult', result.error || result.data, true);
+            }
+        }
+
+        async function testGetStaffById() {
+            const id = document.getElementById('getStaffId').value;
+            if (!id) {
+                showResult('getStaffResult', 'Please enter Staff ID', true);
+                return;
+            }
+
+            const result = await makeRequest('GET', `/staff/${id}`);
+
+            if (result.success) {
+                showResult('getStaffResult', result.data);
+            } else {
+                showResult('getStaffResult', result.error || result.data, true);
+            }
+        }
+
+        async function testCreateStaff() {
+            const username = document.getElementById('createUsername').value;
+            const password = document.getElementById('createPassword').value;
+            const fullName = document.getElementById('createFullName').value;
+            const role = document.getElementById('createRole').value;
+
+            if (!username || !password || !fullName || !role) {
+                showResult('createStaffResult', 'Please fill all required fields', true);
+                return;
+            }
+
+            const result = await makeRequest('POST', '/staff/create', {
+                username,
+                password_hash: password,
+                full_name: fullName,
+                role
+            });
+
+            if (result.success) {
+                showResult('createStaffResult', result.data);
+            } else {
+                showResult('createStaffResult', result.error || result.data, true);
+            }
+        }
+
+        async function testUpdateStaff() {
+            const id = document.getElementById('updateId').value;
+            const username = document.getElementById('updateUsername').value;
+            const password = document.getElementById('updatePassword').value;
+            const fullName = document.getElementById('updateFullName').value;
+            const role = document.getElementById('updateRole').value;
+
+            if (!id || !username || !fullName || !role) {
+                showResult('updateStaffResult', 'Please fill all required fields', true);
+                return;
+            }
+
+            const data = {
+                username,
+                full_name: fullName,
+                role
+            };
+
+            if (password) {
+                data.password_hash = password;
+            }
+
+            const result = await makeRequest('PATCH', `/staff/${id}`, data);
+
+            if (result.success) {
+                showResult('updateStaffResult', result.data);
+            } else {
+                showResult('updateStaffResult', result.error || result.data, true);
+            }
+        }
+
+        async function testDeleteStaff() {
+            const id = document.getElementById('deleteId').value;
+            if (!id) {
+                showResult('deleteStaffResult', 'Please enter Staff ID', true);
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete staff with ID ${id}?`)) {
+                return;
+            }
+
+            const result = await makeRequest('DELETE', `/staff/${id}`);
+
+            if (result.success) {
+                showResult('deleteStaffResult', result.data);
+            } else {
+                showResult('deleteStaffResult', result.error || result.data, true);
+            }
+        }
+
+        async function testGetCurrentStaffInfo() {
+            const result = await makeRequest('GET', '/staff/info');
+
+            if (result.success) {
+                showResult('currentStaffResult', result.data);
+            } else {
+                showResult('currentStaffResult', result.error || result.data, true);
+            }
+        }
+
+        // Auto-fill with production URL
+        window.onload = function() {
+            console.log('Backend API Test loaded');
+            showInfo('loginResult', 'Use this page to test backend API endpoints directly');
+        };
+    </script>
+</body>
+</html>

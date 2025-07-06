@@ -7,13 +7,21 @@ export interface LoginCredentials {
 }
 
 export interface Staff extends BaseEntity {
-  username: string
-  name: string
-  full_name?: string
+  ID?: number
+  UserName: string
+  username?: string // For compatibility
+  name?: string     // For compatibility
+  FullName: string
+  full_name?: string // For compatibility
   email?: string
-  role: string
+  Role: string
+  role?: string      // For compatibility
   position?: string
   phone?: string
+  PasswordHash?: string
+  password_hash?: string // For compatibility
+  CreatedAt?: number
+  UpdatedAt?: number
 }
 
 export interface LoginResponse {

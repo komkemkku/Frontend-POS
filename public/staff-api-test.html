@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff API Test - ทดสอบ API จัดการพนักงาน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Staff Management API Test</h1>
+                <p class="text-gray-600">ทดสอบการเชื่อมต่อ API สำหรับระบบจัดการพนักงาน</p>
+                
+                <!-- API Base URL -->
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">API Base URL:</label>
+                    <input 
+                        type="text" 
+                        id="apiBaseUrl" 
+                        value="http://localhost:8080/api"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Test Controls -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">🧪 API Tests</h2>
+                    
+                    <!-- Get All Staff -->
+                    <div class="mb-4">
+                        <button 
+                            onclick="getAllStaff()" 
+                            class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                            📋 Get All Staff
+                        </button>
+                    </div>
+
+                    <!-- Get Staff by ID -->
+                    <div class="mb-4">
+                        <div class="flex space-x-2">
+                            <input 
+                                type="number" 
+                                id="staffId" 
+                                placeholder="Staff ID"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <button 
+                                onclick="getStaffById()" 
+                                class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                            >
+                                🔍 Get by ID
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Create Staff Form -->
+                    <div class="mb-4 p-4 border border-gray-200 rounded-md">
+                        <h3 class="font-medium text-gray-900 mb-3">➕ Create New Staff</h3>
+                        <div class="space-y-2">
+                            <input 
+                                type="text" 
+                                id="createUsername" 
+                                placeholder="Username"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <input 
+                                type="text" 
+                                id="createFullName" 
+                                placeholder="Full Name"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <select 
+                                id="createRole"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                <option value="">Select Role</option>
+                                <option value="admin">Admin</option>
+                                <option value="manager">Manager</option>
+                                <option value="cashier">Cashier</option>
+                                <option value="waiter">Waiter</option>
+                                <option value="kitchen">Kitchen</option>
+                            </select>
+                            <input 
+                                type="password" 
+                                id="createPassword" 
+                                placeholder="Password"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <button 
+                                onclick="createStaff()" 
+                                class="w-full bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition-colors"
+                            >
+                                ✨ Create Staff
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Update Staff Form -->
+                    <div class="mb-4 p-4 border border-gray-200 rounded-md">
+                        <h3 class="font-medium text-gray-900 mb-3">✏️ Update Staff</h3>
+                        <div class="space-y-2">
+                            <input 
+                                type="number" 
+                                id="updateId" 
+                                placeholder="Staff ID to Update"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <input 
+                                type="text" 
+                                id="updateUsername" 
+                                placeholder="New Username"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <input 
+                                type="text" 
+                                id="updateFullName" 
+                                placeholder="New Full Name"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <select 
+                                id="updateRole"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                <option value="">Select New Role</option>
+                                <option value="admin">Admin</option>
+                                <option value="manager">Manager</option>
+                                <option value="cashier">Cashier</option>
+                                <option value="waiter">Waiter</option>
+                                <option value="kitchen">Kitchen</option>
+                            </select>
+                            <button 
+                                onclick="updateStaff()" 
+                                class="w-full bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 transition-colors"
+                            >
+                                📝 Update Staff
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Delete Staff -->
+                    <div class="mb-4">
+                        <div class="flex space-x-2">
+                            <input 
+                                type="number" 
+                                id="deleteId" 
+                                placeholder="Staff ID to Delete"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <button 
+                                onclick="deleteStaff()" 
+                                class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+                            >
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">📄 API Response</h2>
+                    <div class="space-y-4">
+                        <!-- Status -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">Status:</span>
+                                <span id="responseStatus" class="px-2 py-1 rounded text-xs font-medium">-</span>
+                            </div>
+                        </div>
+
+                        <!-- Response -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Response:</label>
+                            <pre 
+                                id="responseBody" 
+                                class="bg-gray-50 border border-gray-300 rounded-md p-3 text-xs overflow-auto max-h-96"
+                            >No response yet...</pre>
+                        </div>
+
+                        <!-- Clear Button -->
+                        <button 
+                            onclick="clearResponse()" 
+                            class="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                        >
+                            🧹 Clear Response
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getApiBaseUrl() {
+            return document.getElementById('apiBaseUrl').value;
+        }
+
+        function updateStatus(status, isError = false) {
+            const statusEl = document.getElementById('responseStatus');
+            statusEl.textContent = status;
+            statusEl.className = `px-2 py-1 rounded text-xs font-medium ${isError ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`;
+        }
+
+        function updateResponse(data) {
+            document.getElementById('responseBody').textContent = JSON.stringify(data, null, 2);
+        }
+
+        function clearResponse() {
+            document.getElementById('responseStatus').textContent = '-';
+            document.getElementById('responseStatus').className = 'px-2 py-1 rounded text-xs font-medium';
+            document.getElementById('responseBody').textContent = 'No response yet...';
+        }
+
+        async function makeRequest(method, url, body = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                };
+
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(url, options);
+                const data = await response.json();
+
+                updateStatus(`${response.status} ${response.statusText}`, !response.ok);
+                updateResponse(data);
+
+                return { response, data };
+            } catch (error) {
+                updateStatus('Network Error', true);
+                updateResponse({ error: error.message });
+                throw error;
+            }
+        }
+
+        async function getAllStaff() {
+            const url = `${getApiBaseUrl()}/staff`;
+            await makeRequest('GET', url);
+        }
+
+        async function getStaffById() {
+            const id = document.getElementById('staffId').value;
+            if (!id) {
+                alert('Please enter a Staff ID');
+                return;
+            }
+            const url = `${getApiBaseUrl()}/staff/${id}`;
+            await makeRequest('GET', url);
+        }
+
+        async function createStaff() {
+            const username = document.getElementById('createUsername').value;
+            const fullName = document.getElementById('createFullName').value;
+            const role = document.getElementById('createRole').value;
+            const password = document.getElementById('createPassword').value;
+
+            if (!username || !fullName || !role || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const body = {
+                username: username,
+                full_name: fullName,
+                role: role,
+                password_hash: password
+            };
+
+            const url = `${getApiBaseUrl()}/staff`;
+            await makeRequest('POST', url, body);
+        }
+
+        async function updateStaff() {
+            const id = document.getElementById('updateId').value;
+            const username = document.getElementById('updateUsername').value;
+            const fullName = document.getElementById('updateFullName').value;
+            const role = document.getElementById('updateRole').value;
+
+            if (!id || !username || !fullName || !role) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const body = {
+                id: parseInt(id),
+                username: username,
+                full_name: fullName,
+                role: role
+            };
+
+            const url = `${getApiBaseUrl()}/staff/${id}`;
+            await makeRequest('PUT', url, body);
+        }
+
+        async function deleteStaff() {
+            const id = document.getElementById('deleteId').value;
+            if (!id) {
+                alert('Please enter a Staff ID to delete');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete staff with ID ${id}?`)) {
+                return;
+            }
+
+            const url = `${getApiBaseUrl()}/staff/${id}`;
+            await makeRequest('DELETE', url);
+        }
+
+        // Sample data
+        const sampleStaff = [
+            { username: 'admin', full_name: 'ผู้ดูแลระบบ หลัก', role: 'admin', password_hash: 'admin123' },
+            { username: 'manager01', full_name: 'สมชาย ใจดี', role: 'manager', password_hash: 'manager123' },
+            { username: 'cashier01', full_name: 'สมหญิง รักงาน', role: 'cashier', password_hash: 'cashier123' },
+            { username: 'waiter01', full_name: 'สมศักดิ์ บริการดี', role: 'waiter', password_hash: 'waiter123' }
+        ];
+
+        function fillSampleData(index) {
+            if (index >= 0 && index < sampleStaff.length) {
+                const staff = sampleStaff[index];
+                document.getElementById('createUsername').value = staff.username;
+                document.getElementById('createFullName').value = staff.full_name;
+                document.getElementById('createRole').value = staff.role;
+                document.getElementById('createPassword').value = staff.password_hash;
+            }
+        }
+
+        // Add sample data buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            const createSection = document.querySelector('h3:contains("Create New Staff")');
+            // You can add sample data buttons here if needed
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🗑️ Delete Confirmation Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .demo-container {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+        
+        .staff-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .staff-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .staff-info h3 {
+            margin: 0 0 0.5rem 0;
+            color: #1e293b;
+        }
+        
+        .staff-info p {
+            margin: 0;
+            color: #64748b;
+        }
+        
+        .delete-btn {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .delete-btn:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        
+        .features {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .features h3 {
+            margin-top: 0;
+            color: #0c4a6e;
+        }
+        
+        .features ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        
+        .features li {
+            margin-bottom: 0.5rem;
+            color: #075985;
+        }
+        
+        /* Modal Styles */
+        .confirm-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .confirm-modal {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-width: 450px;
+            width: 90%;
+            overflow: hidden;
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .confirm-modal__header {
+            padding: 2rem 2rem 1rem 2rem;
+            text-align: center;
+        }
+
+        .confirm-modal__icon {
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1rem;
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirm-modal__title {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .confirm-modal__content {
+            padding: 0 2rem 1rem 2rem;
+        }
+
+        .confirm-modal__message {
+            margin: 0 0 1.5rem 0;
+            font-size: 0.95rem;
+            color: #6b7280;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .staff-info-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .staff-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .staff-info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .warning-note {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #92400e;
+        }
+
+        .confirm-modal__actions {
+            padding: 1rem 2rem 2rem 2rem;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 120px;
+        }
+
+        .btn--secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn--secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .btn--danger {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+        }
+
+        .btn--danger:hover {
+            background: linear-gradient(135deg, #b91c1c, #991b1b);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🗑️ Delete Confirmation System</h1>
+        
+        <div class="features">
+            <h3>✨ คุณสมบัติพิเศษ</h3>
+            <ul>
+                <li>🎨 Modal ยืนยันการลบที่สวยงาม</li>
+                <li>📋 แสดงข้อมูลพนักงานที่จะลบ</li>
+                <li>⚠️ คำเตือนชัดเจนเกี่ยวกับการกระทำ</li>
+                <li>🎭 Animation และ transition ที่นุ่มนวล</li>
+                <li>📱 รองรับการใช้งานบนมือถือ</li>
+                <li>🎯 ปุ่มยกเลิกและยืนยันที่ชัดเจน</li>
+                <li>🔒 ป้องกันการลบโดยไม่ได้ตั้งใจ</li>
+                <li>🎉 แจ้งเตือนผลลัพธ์หลังการดำเนินการ</li>
+            </ul>
+        </div>
+
+        <h3>👥 รายการพนักงาน</h3>
+        
+        <div class="staff-card">
+            <div class="staff-info">
+                <h3>สมชาย ใจดี</h3>
+                <p>ตำแหน่ง: พนักงานขาย</p>
+            </div>
+            <button class="delete-btn" onclick="showDeleteConfirm('สมชาย ใจดี', 'พนักงานขาย')">
+                🗑️ ลบ
+            </button>
+        </div>
+
+        <div class="staff-card">
+            <div class="staff-info">
+                <h3>สมหญิง รักงาน</h3>
+                <p>ตำแหน่ง: ผู้จัดการ</p>
+            </div>
+            <button class="delete-btn" onclick="showDeleteConfirm('สมหญิง รักงาน', 'ผู้จัดการ')">
+                🗑️ ลบ
+            </button>
+        </div>
+
+        <div class="staff-card">
+            <div class="staff-info">
+                <h3>สมศักดิ์ มีความสุข</h3>
+                <p>ตำแหน่ง: แคชเชียร์</p>
+            </div>
+            <button class="delete-btn" onclick="showDeleteConfirm('สมศักดิ์ มีความสุข', 'แคชเชียร์')">
+                🗑️ ลบ
+            </button>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="confirm-modal-overlay hidden" onclick="hideModal(event)">
+        <div class="confirm-modal" onclick="event.stopPropagation()">
+            <div class="confirm-modal__header">
+                <div class="confirm-modal__icon">
+                    <svg style="width: 2rem; height: 2rem; color: #dc2626;" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <h3 class="confirm-modal__title">ยืนยันการลบพนักงาน</h3>
+            </div>
+
+            <div class="confirm-modal__content">
+                <p class="confirm-modal__message" id="confirmMessage">
+                    คุณต้องการลบพนักงานคนนี้ออกจากระบบหรือไม่?
+                </p>
+                
+                <div class="staff-info-card" id="staffInfoCard">
+                    <div class="staff-info-item">
+                        <span style="font-weight: 500; color: #6b7280;">ชื่อ:</span>
+                        <span style="font-weight: 600; color: #111827;" id="staffName">-</span>
+                    </div>
+                    <div class="staff-info-item">
+                        <span style="font-weight: 500; color: #6b7280;">ตำแหน่ง:</span>
+                        <span style="font-weight: 600; color: #111827;" id="staffRole">-</span>
+                    </div>
+                </div>
+                
+                <div class="warning-note">
+                    <svg style="width: 1rem; height: 1rem;" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                    <span>การกระทำนี้ไม่สามารถย้อนกลับได้</span>
+                </div>
+            </div>
+
+            <div class="confirm-modal__actions">
+                <button class="btn btn--secondary" onclick="cancelDelete()">
+                    ยกเลิก
+                </button>
+                <button class="btn btn--danger" onclick="confirmDelete()">
+                    ยืนยันการลบ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStaffData = null;
+
+        function showDeleteConfirm(name, role) {
+            currentStaffData = { name, role };
+            
+            // Update modal content
+            document.getElementById('confirmMessage').textContent = 
+                `คุณต้องการลบพนักงาน "${name}" ออกจากระบบหรือไม่?`;
+            document.getElementById('staffName').textContent = name;
+            document.getElementById('staffRole').textContent = role;
+            
+            // Show modal
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function hideModal(event) {
+            if (event && event.target === event.currentTarget) {
+                document.getElementById('confirmModal').classList.add('hidden');
+                currentStaffData = null;
+            }
+        }
+
+        function cancelDelete() {
+            document.getElementById('confirmModal').classList.add('hidden');
+            currentStaffData = null;
+            
+            // Show info notification
+            showNotification('info', 'ยกเลิกการลบ', 'การลบพนักงานถูกยกเลิก');
+        }
+
+        function confirmDelete() {
+            if (currentStaffData) {
+                document.getElementById('confirmModal').classList.add('hidden');
+                
+                // Show success notification
+                showNotification('success', 'ลบพนักงานสำเร็จ! 🎉', 
+                    `ลบพนักงาน "${currentStaffData.name}" ออกจากระบบเรียบร้อยแล้ว`);
+                
+                currentStaffData = null;
+            }
+        }
+
+        function showNotification(type, title, message) {
+            // Simple notification (you can enhance this)
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                background: white;
+                padding: 1rem;
+                border-radius: 12px;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                border-left: 4px solid ${type === 'success' ? '#10b981' : '#3b82f6'};
+                z-index: 11000;
+                max-width: 350px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            notification.innerHTML = `
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                    <div style="color: ${type === 'success' ? '#10b981' : '#3b82f6'};">
+                        ${type === 'success' ? '✅' : 'ℹ️'}
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #111827;">${title}</h4>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: #6b7280;">${message}</p>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 4000);
+        }
+
+        // Add slide in animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateX(100%) scale(0.8);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0%) scale(1);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎉 Notification System Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .demo-container {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+        
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .demo-button {
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .demo-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .demo-button--success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        
+        .demo-button--error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        
+        .demo-button--warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+        
+        .demo-button--info {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        
+        .demo-button--special {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+        }
+        
+        .code-preview {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 12px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin-top: 2rem;
+        }
+        
+        .feature-list {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+        }
+        
+        .feature-list h3 {
+            margin-top: 0;
+            color: #1e293b;
+        }
+        
+        .feature-list ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        
+        .feature-list li {
+            margin-bottom: 0.5rem;
+            color: #475569;
+        }
+        
+        /* Notification Styles */
+        .notification-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            max-width: 400px;
+            width: 100%;
+            pointer-events: none;
+        }
+
+        .notification {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid;
+            overflow: hidden;
+            min-height: 70px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: auto;
+            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .notification:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .notification--success { border-left-color: #10b981; background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%); }
+        .notification--error { border-left-color: #ef4444; background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%); }
+        .notification--warning { border-left-color: #f59e0b; background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%); }
+        .notification--info { border-left-color: #3b82f6; background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%); }
+
+        .notification__icon {
+            flex-shrink: 0;
+            width: 1.5rem;
+            height: 1.5rem;
+            margin-top: 0.125rem;
+        }
+
+        .notification--success .notification__icon { color: #10b981; }
+        .notification--error .notification__icon { color: #ef4444; }
+        .notification--warning .notification__icon { color: #f59e0b; }
+        .notification--info .notification__icon { color: #3b82f6; }
+
+        .notification__content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notification__title {
+            margin: 0;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #111827;
+            line-height: 1.4;
+        }
+
+        .notification__message {
+            margin: 0.25rem 0 0 0;
+            font-size: 0.8rem;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        .notification__close {
+            flex-shrink: 0;
+            width: 1.25rem;
+            height: 1.25rem;
+            padding: 0;
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            margin-top: 0.125rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification__close:hover {
+            color: #6b7280;
+            background: #f3f4f6;
+        }
+
+        .notification__progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: currentColor;
+            border-radius: 0 0 12px 12px;
+            opacity: 0.3;
+            animation: progress linear forwards;
+            transform-origin: left;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100%) scale(0.8); }
+            to { opacity: 1; transform: translateX(0%) scale(1); }
+        }
+
+        @keyframes progress {
+            from { transform: scaleX(1); }
+            to { transform: scaleX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🎉 Beautiful Notification System</h1>
+        
+        <div class="feature-list">
+            <h3>✨ Features</h3>
+            <ul>
+                <li>🎨 Beautiful gradient backgrounds and smooth animations</li>
+                <li>📱 Fully responsive design</li>
+                <li>⏱️ Auto-dismiss with customizable duration</li>
+                <li>🎯 Multiple types: Success, Error, Warning, Info</li>
+                <li>❌ Manual close with hover effects</li>
+                <li>📊 Progress bar indicator</li>
+                <li>🔄 Smooth enter/exit transitions</li>
+                <li>🎪 Stack management (multiple notifications)</li>
+            </ul>
+        </div>
+        
+        <div class="button-grid">
+            <button class="demo-button demo-button--success" onclick="showSuccess()">
+                ✅ Success Notification
+            </button>
+            
+            <button class="demo-button demo-button--error" onclick="showError()">
+                ❌ Error Notification  
+            </button>
+            
+            <button class="demo-button demo-button--warning" onclick="showWarning()">
+                ⚠️ Warning Notification
+            </button>
+            
+            <button class="demo-button demo-button--info" onclick="showInfo()">
+                ℹ️ Info Notification
+            </button>
+            
+            <button class="demo-button demo-button--special" onclick="showStaffNotifications()">
+                👥 Staff Management Demo
+            </button>
+            
+            <button class="demo-button demo-button--special" onclick="clearAll()">
+                🗑️ Clear All
+            </button>
+        </div>
+
+        <div class="code-preview">
+<pre>// 🚀 การใช้งาน Notification System
+
+// Import
+import { notification } from '@/utils/notification'
+
+// แสดง notification แบบง่าย
+notification.success('บันทึกข้อมูลสำเร็จ!')
+
+// แสดง notification แบบละเอียด
+notification.error({
+  title: 'เกิดข้อผิดพลาด!',
+  message: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+  duration: 5000
+})
+
+// Notification แบบไม่หายไป
+notification.warning({
+  title: 'คำเตือน!',
+  message: 'ระบบจะปิดปรับปรุงในอีก 5 นาที',
+  persistent: true
+})</pre>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <script>
+        // Simple Notification System
+        let notificationIdCounter = 0;
+        const notifications = [];
+
+        function generateId() {
+            return `notification-${++notificationIdCounter}-${Date.now()}`;
+        }
+
+        function createNotificationElement(notification) {
+            const div = document.createElement('div');
+            div.className = `notification notification--${notification.type}`;
+            div.id = notification.id;
+            
+            // Icons for different types
+            const icons = {
+                success: `<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />`,
+                error: `<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />`,
+                warning: `<path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />`,
+                info: `<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />`
+            };
+
+            div.innerHTML = `
+                <div class="notification__icon">
+                    <svg class="icon" viewBox="0 0 20 20" fill="currentColor" style="width: 100%; height: 100%;">
+                        ${icons[notification.type]}
+                    </svg>
+                </div>
+                <div class="notification__content">
+                    <h4 class="notification__title">${notification.title}</h4>
+                    ${notification.message ? `<p class="notification__message">${notification.message}</p>` : ''}
+                </div>
+                <button class="notification__close" onclick="removeNotification('${notification.id}')">
+                    <svg style="width: 100%; height: 100%;" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                ${!notification.persistent && notification.duration ? 
+                    `<div class="notification__progress" style="animation-duration: ${notification.duration}ms;"></div>` : 
+                    ''
+                }
+            `;
+
+            return div;
+        }
+
+        function addNotification(type, options) {
+            const id = generateId();
+            const duration = options.persistent ? 0 : (options.duration || getDefaultDuration(type));
+            
+            const notification = {
+                id,
+                type,
+                title: typeof options === 'string' ? options : options.title,
+                message: typeof options === 'object' ? options.message : undefined,
+                duration,
+                persistent: options.persistent
+            };
+
+            notifications.push(notification);
+            
+            const container = document.getElementById('notificationContainer');
+            const element = createNotificationElement(notification);
+            container.appendChild(element);
+
+            // Auto remove after duration
+            if (duration > 0) {
+                setTimeout(() => {
+                    removeNotification(id);
+                }, duration);
+            }
+
+            return id;
+        }
+
+        function removeNotification(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.style.animation = 'slideIn 0.3s reverse';
+                setTimeout(() => {
+                    element.remove();
+                    const index = notifications.findIndex(n => n.id === id);
+                    if (index > -1) {
+                        notifications.splice(index, 1);
+                    }
+                }, 300);
+            }
+        }
+
+        function getDefaultDuration(type) {
+            switch (type) {
+                case 'success': return 4000;
+                case 'error': return 6000;
+                case 'warning': return 5000;
+                case 'info': return 4000;
+                default: return 4000;
+            }
+        }
+
+        // Demo functions
+        function showSuccess() {
+            addNotification('success', {
+                title: 'สำเร็จ!',
+                message: 'การดำเนินการเสร็จสิ้นเรียบร้อยแล้ว'
+            });
+        }
+
+        function showError() {
+            addNotification('error', {
+                title: 'เกิดข้อผิดพลาด!',
+                message: 'ไม่สามารถประมวลผลคำขอได้ โปรดลองอีกครั้ง'
+            });
+        }
+
+        function showWarning() {
+            addNotification('warning', {
+                title: 'คำเตือน!',
+                message: 'การกระทำนี้ไม่สามารถย้อนกลับได้'
+            });
+        }
+
+        function showInfo() {
+            addNotification('info', {
+                title: 'ข้อมูล',
+                message: 'ระบบจะปิดปรับปรุงในวันเสาร์เวลา 02:00 น.'
+            });
+        }
+
+        function showStaffNotifications() {
+            // Simulate staff management notifications
+            setTimeout(() => {
+                addNotification('info', {
+                    title: 'กำลังบันทึกข้อมูล...',
+                    message: 'กรุณารอสักครู่'
+                });
+            }, 100);
+
+            setTimeout(() => {
+                addNotification('success', {
+                    title: 'สร้างพนักงานสำเร็จ!',
+                    message: 'เพิ่มพนักงาน สมชาย ใจดี เรียบร้อยแล้ว'
+                });
+            }, 2000);
+
+            setTimeout(() => {
+                addNotification('warning', {
+                    title: 'ตรวจสอบสิทธิ์การเข้าถึง',
+                    message: 'พนักงานใหม่ยังไม่ได้รับสิทธิ์การเข้าถึงระบบ'
+                });
+            }, 3500);
+        }
+
+        function clearAll() {
+            const container = document.getElementById('notificationContainer');
+            container.innerHTML = '';
+            notifications.length = 0;
+        }
+
+        // Show welcome notification
+        setTimeout(() => {
+            addNotification('success', {
+                title: 'ยินดีต้อนรับ!',
+                message: 'ระบบแจ้งเตือนพร้อมใช้งานแล้ว'
+            });
+        }, 500);
+    </script>
+</body>
+</html>
