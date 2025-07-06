@@ -197,7 +197,10 @@ const validateForm = () => {
 }
 
 const handleSubmit = async () => {
-  if (!validateForm()) return
+  if (!validateForm()) {
+    console.log('Validation failed:', errors.value)
+    return
+  }
   
   isSubmitting.value = true
   
@@ -212,9 +215,14 @@ const handleSubmit = async () => {
       submitData.id = formData.value.id
     }
     
-    emit('save', submitData)
+    console.log('CategoryModal: Submitting data:', submitData)
+    
+    // Emit to parent and wait for response
+    await emit('save', submitData)
+    
+    console.log('CategoryModal: Save completed successfully')
   } catch (error) {
-    console.error('Error submitting form:', error)
+    console.error('CategoryModal: Error submitting form:', error)
   } finally {
     isSubmitting.value = false
   }

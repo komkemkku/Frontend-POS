@@ -32,8 +32,8 @@ export const categoryService = {
         description: categoryData.description || '',
         display_order: String(categoryData.display_order || '1')
       }
-      console.log('Sending payload:', payload)
-      const response = await api.post('/categories', payload)
+      console.log('Sending payload to /categories/create:', payload)
+      const response = await api.post('/categories/create', payload)
       return response.data
     } catch (error) {
       console.error('Error creating category:', error)
@@ -50,8 +50,8 @@ export const categoryService = {
         description: categoryData.description || '',
         display_order: String(categoryData.display_order || '1')
       }
-      console.log('Sending payload:', payload)
-      const response = await api.put(`/categories/${id}`, payload)
+      console.log(`Sending payload to /categories/${id} via PATCH:`, payload)
+      const response = await api.patch(`/categories/${id}`, payload)
       return response.data
     } catch (error) {
       console.error('Error updating category:', error)
@@ -62,10 +62,13 @@ export const categoryService = {
   // Delete category
   deleteCategory: async (id) => {
     try {
+      console.log('Deleting category with id:', id)
       const response = await api.delete(`/categories/${id}`)
+      console.log('Delete category response:', response.data)
       return response.data
     } catch (error) {
       console.error('Error deleting category:', error)
+      console.error('Delete error response:', error.response?.data)
       throw error
     }
   }

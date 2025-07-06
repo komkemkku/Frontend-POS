@@ -228,13 +228,17 @@ const filteredCategories = computed(() => {
 const loadCategories = async () => {
   try {
     loading.value = true
+    console.log('Loading categories...')
     const response = await categoryService.getCategories()
-    if (response.status.code === 200) {
-      categories.value = response.data || []
+    console.log('Categories response:', response)
+    
+    if (response.status?.code === 200 || response.status === 'success' || response.data) {
+      categories.value = response.data || response.results || []
+      console.log('Categories loaded:', categories.value.length, 'items')
     }
   } catch (error) {
     console.error('Error loading categories:', error)
-    addToast('error', '⚠️ เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลหมวดหมู่ได้')
+    addToast('error', '❌ โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถโหลดข้อมูลหมวดหมู่ได้')
   } finally {
     loading.value = false
   }
@@ -312,7 +316,10 @@ const confirmDelete = async () => {
   
   try {
     const response = await categoryService.deleteCategory(itemToDelete.value.id)
-    if (response.status.code === 200) {
+    console.log('Delete response:', response)
+    
+    // ตรวจสอบ response structure
+    if (response.status?.code === 200 || response.status === 'success' || response.code === 200) {
       categories.value = categories.value.filter(c => c.id !== itemToDelete.value.id)
       closeDeleteDialog()
       addToast(
@@ -320,14 +327,32 @@ const confirmDelete = async () => {
         '🗑️ ลบหมวดหมู่สำเร็จ', 
         `ลบหมวดหมู่ "${itemToDelete.value.name}" ออกจากระบบเรียบร้อยแล้ว`
       )
+    } else {
+      throw new Error('Unexpected response format')
     }
   } catch (error) {
     console.error('Error deleting category:', error)
-    addToast(
-      'error', 
-      '❌ ไม่สามารถลบหมวดหมู่ได้', 
-      'เกิดข้อผิดพลาดระหว่างการลบ กรุณาลองใหม่อีกครั้ง'
-    )
+    console.error('Error response:', error.response?.data)
+    
+    // ตรวจสอบว่าถูกลบจริงหรือไม่โดยการ reload ข้อมูล
+    await loadCategories()
+    
+    // ถ้าข้อมูลหายไปจริงๆ แสดงว่าลบสำเร็จ
+    const stillExists = categories.value.find(c => c.id === itemToDelete.value.id)
+    if (!stillExists) {
+      closeDeleteDialog()
+      addToast(
+        'success', 
+        '🗑️ ลบหมวดหมู่สำเร็จ', 
+        `ลบหมวดหมู่ "${itemToDelete.value.name}" ออกจากระบบเรียบร้อยแล้ว`
+      )
+    } else {
+      addToast(
+        'error', 
+        '❌ ไม่สามารถลบหมวดหมู่ได้', 
+        'เกิดข้อผิดพลาดระหว่างการลบ กรุณาลองใหม่อีกครั้ง'
+      )
+    }
   }
 }
 
@@ -348,7 +373,7 @@ const closeModal = () => {
 
 const saveCategory = async (formData) => {
   try {
-    console.log('Saving category with data:', formData)
+    console.log('CategoriesView: Saving category with data:', formData)
     let response
     
     if (formData.id) {
@@ -359,17 +384,17 @@ const saveCategory = async (formData) => {
         display_order: formData.display_order
       })
       
-      if (response.status.code === 200) {
-        // Update in local array
-        const index = categories.value.findIndex(cat => cat.id === formData.id)
-        if (index !== -1) {
-          categories.value[index] = { ...categories.value[index], ...formData }
-        }
+      console.log('Update response:', response)
+      if (response.status?.code === 200 || response.status === 'success' || response.code === 200) {
+        // Reload ข้อมูลเพื่อให้แน่ใจว่าได้ข้อมูลล่าสุด
+        await loadCategories()
         addToast(
           'success', 
           '✏️ แก้ไขหมวดหมู่สำเร็จ', 
           `อัปเดตข้อมูลหมวดหมู่ "${formData.name}" เรียบร้อยแล้ว`
         )
+        closeModal()
+        return response
       }
     } else {
       // Create new category
@@ -379,26 +404,30 @@ const saveCategory = async (formData) => {
         display_order: formData.display_order
       })
       
-      if (response.status.code === 200) {
-        // Add to local array
-        categories.value.unshift(response.data)
+      console.log('Create response:', response)
+      if (response.status?.code === 200 || response.status === 'success' || response.code === 200) {
+        // Reload ข้อมูลเพื่อให้แน่ใจว่าได้ข้อมูลล่าสุดรวมถึงข้อมูลใหม่
+        await loadCategories()
         addToast(
           'success', 
           '🏷️ เพิ่มหมวดหมู่ใหม่สำเร็จ', 
           `หมวดหมู่ "${formData.name}" พร้อมใช้งานแล้ว`
         )
+        closeModal()
+        return response
       }
     }
     
-    closeModal()
+    throw new Error(`API returned unexpected status: ${response?.status?.code || response?.code || 'unknown'}`)
   } catch (error) {
-    console.error('Error saving category:', error)
-    console.error('Error response:', error.response?.data)
+    console.error('CategoriesView: Error saving category:', error)
+    console.error('CategoriesView: Error response:', error.response?.data)
     addToast(
       'error', 
       '💾 ไม่สามารถบันทึกได้', 
-      'เกิดข้อผิดพลาดระหว่างการบันทึกข้อมูลหมวดหมู่ กรุณาตรวจสอบและลองใหม่อีกครั้ง'
+      `เกิดข้อผิดพลาด: ${error.response?.data?.message || error.message || 'กรุณาลองใหม่อีกครั้ง'}`
     )
+    throw error // Re-throw เพื่อให้ Modal รู้ว่ามี error
   }
 }
 
@@ -441,6 +470,7 @@ onMounted(() => {
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
