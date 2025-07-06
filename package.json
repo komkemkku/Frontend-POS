@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
+    "deploy": "powershell -ExecutionPolicy Bypass -File ./auto-deploy.ps1",
+    "cleanup": "powershell -ExecutionPolicy Bypass -File ./cleanup.ps1",
+    "build:deploy": "npm run build && npm run deploy"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",

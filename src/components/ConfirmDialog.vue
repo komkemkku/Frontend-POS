@@ -101,6 +101,7 @@ import {
   TrashIcon
 } from '@heroicons/vue/24/outline'
 
+// eslint-disable-next-line no-unused-vars
 const props = defineProps({
   open: {
     type: Boolean,
