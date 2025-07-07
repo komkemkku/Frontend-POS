@@ -1,8 +1,9 @@
+
 <template>
   <div class="space-y-6">
     <div class="text-center py-12">
       <h1 class="text-2xl font-bold text-gray-900 mb-4">จัดการโต๊ะ</h1>
-      <p class="text-gray-600 mb-8">หน้านี้กำลังพัฒนา - จัดการโต๊ะและ QR Code</p>
+      <p class="text-gray-600 mb-8">หน้านี้กำลังพัฒนา - จัดการโต๊ะ</p>
       <div class="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-700 rounded-lg">
         <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-700" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -13,3 +14,7 @@
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+// ยังไม่ต้องมี logic ใด ๆ
+</script>

@@ -9,6 +9,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresGuest: true }
   },
   {
+    path: '/menu/:qrCodeIdentifier',
+    name: 'PublicMenu',
+    component: () => import('@/views/public/PublicMenuView.vue'),
+    meta: { public: true }
+  },
+  {
     path: '/',
     name: 'Dashboard',
     component: () => import('@/layouts/AdminLayout.vue'),

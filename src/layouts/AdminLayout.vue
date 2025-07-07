@@ -241,7 +241,7 @@ const navigation = [
     icon: Squares2X2Icon,
   },
   {
-    name: "Tables",
+    name: "TableDashboard",
     label: "จัดการโต๊ะ",
     href: "/tables",
     icon: TableCellsIcon,
@@ -263,7 +263,9 @@ const navigation = [
 ];
 
 const currentPageTitle = computed(() => {
-  const currentNav = navigation.find((item) => item.name === route.name);
+  // รองรับ route ที่ชื่อ 'Tables' ด้วย (ตรงกับ router)
+  const currentNav = navigation.find((item) => item.name === route.name || (route.name === 'Tables' && item.name === 'TableDashboard'));
+  if (route.name === 'Tables') return 'จัดการโต๊ะ';
   return currentNav?.label || "แดชบอร์ด";
 });
 

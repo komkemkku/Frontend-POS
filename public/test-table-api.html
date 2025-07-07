@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ทดสอบ Table API</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <h1>ทดสอบ API การจัดการโต๊ะ</h1>
+  
+  <div>
+    <h2>ผลลัพธ์:</h2>
+    <pre id="result">กำลังโหลด...</pre>
+  </div>
+
+  <script>
+    const baseURL = 'https://backend-pos-production.up.railway.app'
+    
+    // สำหรับทดสอบ ใช้ mock token (ถ้า backend ต้องการ auth)
+    const mockToken = 'test_token_for_api_testing'
+    
+    async function testTableAPI() {
+      try {
+        console.log('Testing table API...')
+        
+        // ทดสอบเรียก API ดูโต๊ะทั้งหมด
+        const response = await axios.get(`${baseURL}/tables`, {
+          headers: {
+            'Authorization': `Bearer ${mockToken}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        })
+        
+        console.log('API Response:', response.data)
+        document.getElementById('result').textContent = JSON.stringify(response.data, null, 2)
+        
+      } catch (error) {
+        console.error('API Error:', error)
+        
+        let errorMessage = 'Unknown error'
+        if (error.response) {
+          errorMessage = `HTTP ${error.response.status}: ${JSON.stringify(error.response.data, null, 2)}`
+        } else if (error.request) {
+          errorMessage = 'Network error - ไม่สามารถเชื่อมต่อ backend ได้'
+        } else {
+          errorMessage = error.message
+        }
+        
+        document.getElementById('result').textContent = `Error: ${errorMessage}`
+      }
+    }
+    
+    // เรียกทดสอบเมื่อโหลดหน้า
+    testTableAPI()
+  </script>
+</body>
+</html>
