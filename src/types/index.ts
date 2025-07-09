@@ -4,14 +4,17 @@ export * from './common'
 export * from './dashboard'
 export * from './menu'
 export * from './orders'
+export * from './reservation'
 export * from './staff'
 
-// Table types with explicit naming to avoid conflicts
+// Table types - export as is to match component expectations
 export type {
-  Table as TableEntity,
-  TableCreateRequest as TableCreateReq,
-  TableUpdateRequest as TableUpdateReq,
+  Table,
+  TableStatus,
+  TableCreateRequest,
+  TableUpdateRequest,
   TableQueryParams,
-  QRCodeData,
-  TABLE_STATUSES
+  QRCodeData
 } from './table'
+
+export { TABLE_STATUSES } from './table'
