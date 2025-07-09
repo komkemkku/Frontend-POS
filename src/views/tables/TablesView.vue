@@ -263,23 +263,25 @@
                 <div class="min-h-full min-w-full relative">
                   <!-- Zone Legend -->
                   <div class="absolute top-3 right-3 bg-white shadow-sm p-2 rounded-md border border-blue-100 z-10">
-                    <h4 class="text-xs font-semibold text-gray-700 mb-1.5">พื้นที่</h4>
-                    <div class="space-y-1.5">
-                      <div class="flex items-center">
-                        <div class="w-3 h-3 rounded-sm bg-blue-100 border border-blue-300 mr-1.5"></div>
-                        <span class="text-xs text-gray-600">ในร้าน</span>
-                      </div>
-                      <div class="flex items-center">
-                        <div class="w-3 h-3 rounded-sm bg-emerald-100 border border-emerald-300 mr-1.5"></div>
-                        <span class="text-xs text-gray-600">นอกร้าน</span>
-                      </div>
-                      <div class="flex items-center">
-                        <div class="w-3 h-3 rounded-sm bg-amber-100 border border-amber-300 mr-1.5"></div>
-                        <span class="text-xs text-gray-600">ระเบียง</span>
-                      </div>
-                      <div class="flex items-center">
-                        <div class="w-3 h-3 rounded-sm bg-purple-100 border border-purple-300 mr-1.5"></div>
-                        <span class="text-xs text-gray-600">ห้องส่วนตัว</span>
+                    <div class="flex flex-col">
+                      <h4 class="text-xs font-semibold text-gray-700 mb-1.5">พื้นที่</h4>
+                      <div class="flex items-center space-x-4">
+                        <div class="flex items-center">
+                          <div class="w-3 h-3 rounded-sm bg-blue-100 border border-blue-300 mr-1.5"></div>
+                          <span class="text-xs text-gray-600">ในร้าน</span>
+                        </div>
+                        <div class="flex items-center">
+                          <div class="w-3 h-3 rounded-sm bg-emerald-100 border border-emerald-300 mr-1.5"></div>
+                          <span class="text-xs text-gray-600">นอกร้าน</span>
+                        </div>
+                        <div class="flex items-center">
+                          <div class="w-3 h-3 rounded-sm bg-amber-100 border border-amber-300 mr-1.5"></div>
+                          <span class="text-xs text-gray-600">ระเบียง</span>
+                        </div>
+                        <div class="flex items-center">
+                          <div class="w-3 h-3 rounded-sm bg-purple-100 border border-purple-300 mr-1.5"></div>
+                          <span class="text-xs text-gray-600">ห้องส่วนตัว</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -674,7 +676,7 @@ const loadTables = async () => {
     }
   } catch (error) {
     console.error('Error loading tables:', error)
-    showNotification('เกิดข้อผิดพลาดในการโหลดข้อมูลโต๊ะ', 'error')
+    showNotification('ไม่สามารถโหลดข้อมูลโต๊ะได้ โปรดลองใหม่อีกครั้ง', 'error')
     tables.value = mockTables
   } finally {
     loading.value = false
@@ -683,7 +685,7 @@ const loadTables = async () => {
 
 const refreshTables = async () => {
   await loadTables()
-  showNotification('รีเฟรชข้อมูลโต๊ะเรียบร้อย', 'success')
+  showNotification('อัพเดทข้อมูลโต๊ะเรียบร้อยแล้ว', 'success')
 }
 
 const applyFilters = () => {
@@ -748,7 +750,7 @@ const saveTable = async () => {
         if (index !== -1) {
           tables.value[index] = updatedTable
         }
-        showNotification('แก้ไขโต๊ะเรียบร้อย', 'success')
+        showNotification(`บันทึกการแก้ไขโต๊ะ ${tableForm.value.table_number} เรียบร้อยแล้ว`, 'success')
       } catch (error) {
         // Mock update for development
         const index = tables.value.findIndex(t => t.id === editingTable.value!.id)
@@ -766,7 +768,7 @@ const saveTable = async () => {
       try {
         const newTable = await tableService.createTable(tableForm.value)
         tables.value.unshift(newTable)
-        showNotification('เพิ่มโต๊ะใหม่เรียบร้อย', 'success')
+        showNotification(`เพิ่มโต๊ะใหม่หมายเลข ${tableForm.value.table_number} เรียบร้อยแล้ว`, 'success')
       } catch (error) {
         // Mock create for development
         const newTable: Table = {
@@ -787,7 +789,7 @@ const saveTable = async () => {
     closeTableModal()
   } catch (error) {
     console.error('Error saving table:', error)
-    showNotification('เกิดข้อผิดพลาดในการบันทึกโต๊ะ', 'error')
+    showNotification(`ไม่สามารถบันทึกข้อมูลโต๊ะได้ โปรดตรวจสอบข้อมูลและลองใหม่อีกครั้ง`, 'error')
   } finally {
     saving.value = false
   }
@@ -818,11 +820,11 @@ const deleteTable = async () => {
     }
     
     tables.value = tables.value.filter(t => t.id !== tableToDelete.value!.id)
-    showNotification('ลบโต๊ะเรียบร้อย', 'success')
+    showNotification(`ลบโต๊ะหมายเลข ${tableToDelete.value.table_number} เรียบร้อยแล้ว`, 'success')
     closeDeleteModal()
   } catch (error) {
     console.error('Error deleting table:', error)
-    showNotification('เกิดข้อผิดพลาดในการลบโต๊ะ', 'error')
+    showNotification('ไม่สามารถลบโต๊ะได้ โปรดลองใหม่อีกครั้ง', 'error')
   } finally {
     deleting.value = false
   }
@@ -858,7 +860,7 @@ const toggleTableStatus = async (table: Table) => {
     showNotification(`เปลี่ยนสถานะโต๊ะ ${table.table_number} เป็น "${TABLE_STATUSES[nextStatus]}"`, 'success')
   } catch (error) {
     console.error('Error updating table status:', error)
-    showNotification('เกิดข้อผิดพลาดในการเปลี่ยนสถานะโต๊ะ', 'error')
+    showNotification(`ไม่สามารถเปลี่ยนสถานะโต๊ะได้ โปรดลองใหม่อีกครั้ง`, 'error')
   } finally {
     updatingStatus.value = null
   }
@@ -934,7 +936,7 @@ const generateQRCodeImage = async () => {
       qrContainer.appendChild(qrDiv)
     }
     
-    showNotification('เกิดข้อผิดพลาดในการสร้าง QR Code', 'error')
+    showNotification('ไม่สามารถสร้าง QR Code ได้ โปรดลองใหม่อีกครั้ง', 'error')
   }
 }
 
@@ -976,7 +978,7 @@ const saveLayout = async () => {
     showNotification('บันทึกแผนผังโต๊ะเรียบร้อย', 'success')
     layoutSaved.value = true
   } catch (error) {
-    showNotification('เกิดข้อผิดพลาดในการบันทึกแผนผัง', 'error')
+    showNotification('ไม่สามารถบันทึกแผนผังโต๊ะได้ โปรดลองใหม่อีกครั้ง', 'error')
     console.error(error)
   }
 }
@@ -986,7 +988,7 @@ watch(viewMode, (newMode) => {
   if (newMode === 'layout') {
     // This would typically use a library like interact.js or vue-draggable
     // For demo purposes, we're showing the UI without actual functionality
-    showNotification('คุณสามารถลากโต๊ะเพื่อจัดแผนผังได้', 'info')
+    showNotification('คุณสามารถลากโต๊ะเพื่อจัดตำแหน่งในแผนผังได้ตามต้องการ', 'info')
   }
 })
 
@@ -1033,14 +1035,19 @@ const getLocationText = (location: string) => {
 
 // Notification system
 const showNotification = (message: string, type: 'success' | 'info' | 'warning' | 'error' = 'info') => {
+  const titles = {
+    'success': 'ดำเนินการสำเร็จ',
+    'error': 'เกิดข้อผิดพลาด',
+    'warning': 'คำเตือน',
+    'info': 'ข้อมูลการแจ้งเตือน'
+  }
+  
   window.dispatchEvent(new CustomEvent('showNotification', {
     detail: { 
-      title: type === 'success' ? 'สำเร็จ' : 
-             type === 'error' ? 'เกิดข้อผิดพลาด' : 
-             type === 'warning' ? 'คำเตือน' : 'แจ้งเตือน',
+      title: titles[type],
       message, 
       type, 
-      duration: 5000 
+      duration: type === 'error' ? 7000 : 5000 // Error messages stay longer
     }
   }))
 }
